@@ -1,6 +1,7 @@
 package com.matheus.api_abito_arcano.services;
 
 import com.matheus.api_abito_arcano.dtos.SubareaDTO;
+import com.matheus.api_abito_arcano.exceptions.AreaNotFoundException;
 import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.models.Subarea;
 import com.matheus.api_abito_arcano.repositories.AreaRepository;
@@ -25,7 +26,7 @@ public class SubareaService {
 
         Optional<Area> areaOptional = areaRepository.findById(subareaDTO.areaId());
         if (areaOptional.isEmpty()) {
-            throw new IllegalStateException("Área com o ID fornecido não encontrada.");
+            throw new AreaNotFoundException(subareaDTO.areaId());
         }
 
         Subarea subarea = new Subarea();

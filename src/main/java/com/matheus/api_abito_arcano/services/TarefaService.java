@@ -2,6 +2,9 @@ package com.matheus.api_abito_arcano.services;
 
 
 import com.matheus.api_abito_arcano.dtos.TarefaDTO;
+import com.matheus.api_abito_arcano.exceptions.AreaNotFoundException;
+import com.matheus.api_abito_arcano.exceptions.InvalidAreaException;
+import com.matheus.api_abito_arcano.exceptions.SubareaNotFoundException;
 import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.models.Subarea;
 import com.matheus.api_abito_arcano.models.Tarefa;
@@ -39,7 +42,7 @@ public class TarefaService {
 
         if (area == null) {
             area = areaRepository.findByNome("Sem Categoria")
-                    .orElseThrow(() -> new IllegalStateException("Área 'Sem Categoria' não encontrada"));
+                    .orElseThrow(() -> new AreaNotFoundException(UUID.randomUUID()));
         }
 
         Subarea subarea = null;
@@ -49,10 +52,10 @@ public class TarefaService {
                 subarea = optionalSubarea.get();
 
                 if (!subarea.getArea().equals(area)) {
-                    throw new IllegalStateException("A subárea fornecida não pertence à área fornecida.");
+                    throw new InvalidAreaException("A subárea fornecida não pertence à área fornecida.");
                 }
             } else {
-                throw new IllegalStateException("Subárea não encontrada com o ID fornecido.");
+                throw new SubareaNotFoundException(tarefaDto.subareaId());
             }
         }
 
