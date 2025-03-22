@@ -1,6 +1,7 @@
 package com.matheus.api_abito_arcano.controllers;
 
 import com.matheus.api_abito_arcano.dtos.TarefaDTO;
+import com.matheus.api_abito_arcano.dtos.response.TarefaResponseDTO;
 import com.matheus.api_abito_arcano.models.Tarefa;
 import com.matheus.api_abito_arcano.repositories.TarefaRepository;
 import com.matheus.api_abito_arcano.services.TarefaService;
@@ -22,14 +23,14 @@ public class TarefaController {
     private TarefaService tarefaService;
 
     @PostMapping
-    public ResponseEntity<Tarefa> criarTarefa(@RequestBody @Valid TarefaDTO tarefaDto) {
-
-        return ResponseEntity.ok(tarefaService.criarTarefa(tarefaDto));
+    public ResponseEntity<TarefaResponseDTO> criarTarefa(@RequestBody @Valid TarefaDTO tarefaDto) {
+        Tarefa tarefa = tarefaService.criarTarefa(tarefaDto);
+        return ResponseEntity.ok(new TarefaResponseDTO(tarefa));
     }
 
     @GetMapping
-    public ResponseEntity<List<Tarefa>> listarTarefas() {
-        List<Tarefa> tarefas = tarefaService.listarTarefas();
+    public ResponseEntity<List<TarefaResponseDTO>> listarTarefas() {
+        List<TarefaResponseDTO> tarefas = tarefaService.listarTarefas();
         if (!tarefas.isEmpty()) {
             return ResponseEntity.ok(tarefas);
         } else {
@@ -38,16 +39,20 @@ public class TarefaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Tarefa> buscarPorId(@PathVariable UUID id) {
-        return tarefaService.buscarPorId(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<TarefaResponseDTO> buscarPorId(@PathVariable UUID id) {
+        TarefaResponseDTO tarefaDTO = tarefaService.buscarPorId(id);
+
+        if (tarefaDTO != null) {
+            return ResponseEntity.ok(tarefaDTO);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Tarefa> atualizarTarefa(@PathVariable UUID id, @RequestBody @Valid TarefaDTO tarefaDTO) {
+    public ResponseEntity<TarefaResponseDTO> atualizarTarefa(@PathVariable UUID id, @RequestBody @Valid TarefaDTO tarefaDTO) {
         Tarefa tarefa = tarefaService.atualizarTarefa(id, tarefaDTO);
-        return (tarefa != null) ? ResponseEntity.ok(tarefa) : ResponseEntity.notFound().build();
+        return (tarefa != null) ? ResponseEntity.ok(new TarefaResponseDTO(tarefa)) : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}")

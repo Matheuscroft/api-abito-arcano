@@ -19,12 +19,12 @@ public class Tarefa {
     private String titulo;
     private int pontuacao;
 
-    @ElementCollection
-    @CollectionTable(name = "dias_semana", joinColumns = @JoinColumn(name = "tarefa_id"))
-    @Column(name = "dia")
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable( name = "dias_semana", joinColumns = @JoinColumn(name = "tarefa_id") )
+    @Column(name = "dia", columnDefinition = "INTEGER")
     private List<Integer> diasSemana;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "area_id", referencedColumnName = "id")
     private Area area;
 

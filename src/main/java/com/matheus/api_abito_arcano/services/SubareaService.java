@@ -46,18 +46,14 @@ public class SubareaService {
 
     public Subarea atualizarSubarea(UUID id, SubareaDTO subareaDTO) {
         Optional<Subarea> subareaOptional = subareaRepository.findById(id);
+
         if (subareaOptional.isPresent()) {
             Subarea subarea = subareaOptional.get();
             subarea.setNome(subareaDTO.nome());
 
-            Optional<Area> areaOptional = areaRepository.findById(subareaDTO.areaId());
-            if (areaOptional.isEmpty()) {
-                throw new IllegalStateException("Área com o ID fornecido não encontrada.");
-            }
-            subarea.setArea(areaOptional.get());
-
             return subareaRepository.save(subarea);
         }
+
         return null;
     }
 

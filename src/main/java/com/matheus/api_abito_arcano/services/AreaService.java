@@ -1,6 +1,8 @@
 package com.matheus.api_abito_arcano.services;
 
 import com.matheus.api_abito_arcano.dtos.AreaDTO;
+import com.matheus.api_abito_arcano.dtos.response.AreaResponseDTO;
+import com.matheus.api_abito_arcano.dtos.response.SubareaResponseDTO;
 import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.repositories.AreaRepository;
 import jakarta.annotation.PostConstruct;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class AreaService {
@@ -35,8 +38,19 @@ public class AreaService {
         return areaRepository.save(area);
     }
 
-    public List<Area> listarAreas() {
-        return areaRepository.findAll();
+    public List<AreaResponseDTO> listarAreas() {
+        List<Area> areas = areaRepository.findAll();
+
+        return areas.stream()
+                .map(area -> new AreaResponseDTO(
+                        area.getId(),
+                        area.getNome(),
+                        area.getCor(),
+                        area.getSubareas().stream()
+                                .map(subarea -> new SubareaResponseDTO(subarea.getId(), subarea.getNome()))
+                                .toList()
+                ))
+                .collect(Collectors.toList());
     }
 
     public Optional<Area> buscarPorId(UUID id) {

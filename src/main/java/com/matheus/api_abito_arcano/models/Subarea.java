@@ -1,6 +1,7 @@
 package com.matheus.api_abito_arcano.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "TB_SUBAREA")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Subarea {
 
     @Id
@@ -17,8 +19,8 @@ public class Subarea {
     private String nome;
 
     @ManyToOne
-    @JoinColumn(name = "area_id", referencedColumnName = "id")
-    @JsonBackReference
+    @JoinColumn(name = "area_id", nullable = false)
+    @JsonIgnoreProperties("subareas")
     private Area area;
 
     public UUID getId() {

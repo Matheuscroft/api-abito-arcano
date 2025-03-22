@@ -1,6 +1,9 @@
 package com.matheus.api_abito_arcano.controllers;
 
 import com.matheus.api_abito_arcano.dtos.AreaDTO;
+import com.matheus.api_abito_arcano.dtos.SubareaDTO;
+import com.matheus.api_abito_arcano.dtos.response.AreaResponseDTO;
+import com.matheus.api_abito_arcano.dtos.response.SubareaResponseDTO;
 import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.services.AreaService;
 import jakarta.validation.Valid;
@@ -11,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/areas")
@@ -25,8 +29,9 @@ public class AreaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Area>> listarAreas() {
-        return ResponseEntity.ok(areaService.listarAreas());
+    public ResponseEntity<List<AreaResponseDTO>> listarAreas() {
+        List<AreaResponseDTO> areaResponseDTOs = areaService.listarAreas();
+        return ResponseEntity.ok(areaResponseDTOs);
     }
 
     @GetMapping("/{id}")
