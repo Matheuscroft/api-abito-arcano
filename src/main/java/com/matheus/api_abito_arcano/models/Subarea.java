@@ -1,10 +1,8 @@
 package com.matheus.api_abito_arcano.models;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -16,7 +14,7 @@ public class Subarea {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    private String nome;
+    private String name;
 
     @ManyToOne
     @JoinColumn(name = "area_id", nullable = false)
@@ -31,12 +29,12 @@ public class Subarea {
         this.id = id;
     }
 
-    public String getNome() {
-        return nome;
+    public String getName() {
+        return name;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public Area getArea() {

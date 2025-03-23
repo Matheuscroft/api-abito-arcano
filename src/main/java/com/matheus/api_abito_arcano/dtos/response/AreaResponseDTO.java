@@ -6,8 +6,8 @@ import java.util.UUID;
 
 public record AreaResponseDTO(
         UUID id,
-        String nome,
-        String cor,
+        String name,
+        String color,
         List<SubareaResponseDTO> subareas
 ) {
 }

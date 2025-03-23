@@ -6,18 +6,18 @@ import java.util.UUID;
 
 public record TarefaResponseDTO(
         UUID id,
-        String titulo,
-        int pontuacao,
-        List<Integer> diasSemana,
+        String title,
+        int score,
+        List<Integer> daysOfTheWeek,
         UUID areaId,
         UUID subareaId
 ) {
     public TarefaResponseDTO(Tarefa tarefa) {
         this(
                 tarefa.getId(),
-                tarefa.getTitulo(),
-                tarefa.getPontuacao(),
-                tarefa.getDiasSemana(),
+                tarefa.getTitle(),
+                tarefa.getScore(),
+                tarefa.getDaysOfTheWeek(),
                 tarefa.getArea().getId(),
                 tarefa.getSubarea() != null ? tarefa.getSubarea().getId() : null
         );

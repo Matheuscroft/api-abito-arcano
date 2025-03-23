@@ -38,7 +38,7 @@ public class TarefaService {
 
     public Tarefa criarTarefa(TarefaDTO tarefaDto) {
 
-        logger.info("Iniciando criação de tarefa: {}", tarefaDto.titulo());
+        logger.info("Iniciando criação de tarefa: {}", tarefaDto.title());
 
         Area area = null;
         if (tarefaDto.areaId() != null) {
@@ -51,7 +51,7 @@ public class TarefaService {
 
         if (area == null) {
             logger.warn("Nenhuma área fornecida ou encontrada, usando 'Sem Categoria'");
-            area = areaRepository.findByNome("Sem Categoria")
+            area = areaRepository.findByName("Sem Categoria")
                     .orElseThrow(() -> {
                         logger.error("Área 'Sem Categoria' não encontrada! Verifique se ela existe no banco de dados.");
                         return new AreaNotFoundException(UUID.randomUUID());
@@ -65,10 +65,10 @@ public class TarefaService {
             if (optionalSubarea.isPresent()) {
                 subarea = optionalSubarea.get();
 
-                logger.info("Subárea encontrada: {}", subarea.getNome());
+                logger.info("Subárea encontrada: {}", subarea.getName());
 
                 if (!subarea.getArea().equals(area)) {
-                    logger.error("A subárea '{}' não pertence à área '{}'", subarea.getNome(), area.getNome());
+                    logger.error("A subárea '{}' não pertence à área '{}'", subarea.getName(), area.getName());
                     throw new InvalidAreaException("A subárea fornecida não pertence à área fornecida.");
                 }
             } else {
@@ -78,16 +78,16 @@ public class TarefaService {
         }
 
         Tarefa tarefa = new Tarefa();
-        tarefa.setTitulo(tarefaDto.titulo());
-        tarefa.setPontuacao(tarefaDto.pontuacao());
-        tarefa.setDiasSemana(tarefaDto.diasSemana());
+        tarefa.setTitle(tarefaDto.title());
+        tarefa.setScore(tarefaDto.score());
+        tarefa.setDaysOfTheWeek(tarefaDto.daysOfTheWeek());
         tarefa.setArea(area);
 
         if (subarea != null) {
             tarefa.setSubarea(subarea);
         }
 
-        logger.info("Salvando tarefa: {}", tarefa.getTitulo());
+        logger.info("Salvando tarefa: {}", tarefa.getTitle());
 
         return tarefaRepository.save(tarefa);
     }
@@ -111,9 +111,9 @@ public class TarefaService {
         Optional<Tarefa> tarefaOptional = tarefaRepository.findById(id);
         if (tarefaOptional.isPresent()) {
             Tarefa tarefa = tarefaOptional.get();
-            tarefa.setTitulo(tarefaDTO.titulo());
-            tarefa.setPontuacao(tarefaDTO.pontuacao());
-            tarefa.setDiasSemana(tarefaDTO.diasSemana());
+            tarefa.setTitle(tarefaDTO.title());
+            tarefa.setScore(tarefaDTO.score());
+            tarefa.setDaysOfTheWeek(tarefaDTO.daysOfTheWeek());
             return tarefaRepository.save(tarefa);
         }
         return null;

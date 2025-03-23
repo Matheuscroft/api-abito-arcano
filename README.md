@@ -8,20 +8,20 @@ Java RESTful API - To Do List
 classDiagram
 class Tarefa {
     -UUID id
-    -String titulo
-    -int pontuacao
-    -List<Integer> diasSemana
+    -String title
+    -int score
+    -List<Integer> daysOfTheWeek
 }
 
 class Area {
     -UUID id
-    -String nome
-    -String cor
+    -String name
+    -String color
 }
 
 class Subarea {
     -UUID id
-    -String nome
+    -String name
 }
 
 Tarefa "1" *-- "1" Area : "pertence a"

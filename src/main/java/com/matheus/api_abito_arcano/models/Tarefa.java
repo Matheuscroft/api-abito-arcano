@@ -16,13 +16,13 @@ public class Tarefa {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    private String titulo;
-    private int pontuacao;
+    private String title;
+    private int score;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable( name = "dias_semana", joinColumns = @JoinColumn(name = "tarefa_id") )
-    @Column(name = "dia", columnDefinition = "INTEGER")
-    private List<Integer> diasSemana;
+    @CollectionTable( name = "days_of_the_week", joinColumns = @JoinColumn(name = "tarefa_id") )
+    @Column(name = "day", columnDefinition = "INTEGER")
+    private List<Integer> daysOfTheWeek;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "area_id", referencedColumnName = "id")
@@ -40,28 +40,28 @@ public class Tarefa {
         this.id = id;
     }
 
-    public String getTitulo() {
-        return titulo;
+    public String getTitle() {
+        return title;
     }
 
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    public int getPontuacao() {
-        return pontuacao;
+    public int getScore() {
+        return score;
     }
 
-    public void setPontuacao(int pontuacao) {
-        this.pontuacao = pontuacao;
+    public void setScore(int score) {
+        this.score = score;
     }
 
-    public List<Integer> getDiasSemana() {
-        return diasSemana;
+    public List<Integer> getDaysOfTheWeek() {
+        return daysOfTheWeek;
     }
 
-    public void setDiasSemana(List<Integer> diasSemana) {
-        this.diasSemana = diasSemana;
+    public void setDaysOfTheWeek(List<Integer> daysOfTheWeek) {
+        this.daysOfTheWeek = daysOfTheWeek;
     }
 
     public Area getArea() {

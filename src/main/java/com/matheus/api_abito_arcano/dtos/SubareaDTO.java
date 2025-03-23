@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 public record SubareaDTO(
-        @NotBlank String nome,
+        @NotBlank String name,
         @NotNull UUID areaId
 ) {
 }

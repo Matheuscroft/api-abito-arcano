@@ -4,6 +4,6 @@ import java.util.UUID;
 
 public record SubareaResponseDTO(
         UUID id,
-        String nome
+        String name
 ) {
 }

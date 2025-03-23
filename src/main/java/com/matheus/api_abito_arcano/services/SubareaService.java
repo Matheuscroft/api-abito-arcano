@@ -30,7 +30,7 @@ public class SubareaService {
         }
 
         Subarea subarea = new Subarea();
-        subarea.setNome(subareaDTO.nome());
+        subarea.setName(subareaDTO.name());
         subarea.setArea(areaOptional.get());
 
         return subareaRepository.save(subarea);
@@ -49,7 +49,7 @@ public class SubareaService {
 
         if (subareaOptional.isPresent()) {
             Subarea subarea = subareaOptional.get();
-            subarea.setNome(subareaDTO.nome());
+            subarea.setName(subareaDTO.name());
 
             return subareaRepository.save(subarea);
         }

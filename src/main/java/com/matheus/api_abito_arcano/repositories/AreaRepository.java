@@ -9,5 +9,5 @@ import java.util.UUID;
 
 public interface AreaRepository extends JpaRepository<Area, UUID> {
 
-    Optional<Area> findByNome(String nome);
+    Optional<Area> findByName(String name);
 }

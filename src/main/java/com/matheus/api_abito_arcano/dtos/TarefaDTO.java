@@ -8,9 +8,9 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 
-public record TarefaDTO (@NotBlank String titulo,
-                         @NotNull int pontuacao,
-                         @NotNull List<Integer> diasSemana,
+public record TarefaDTO (@NotBlank String title,
+                         @NotNull int score,
+                         @NotNull List<Integer> daysOfTheWeek,
                          UUID areaId,
                          UUID subareaId
 ){

@@ -22,19 +22,19 @@ public class AreaService {
 
     @PostConstruct
     public void garantirAreaSemCategoria() {
-        Optional<Area> areaSemCategoria = areaRepository.findByNome("Sem Categoria");
+        Optional<Area> areaSemCategoria = areaRepository.findByName("Sem Categoria");
         if (areaSemCategoria.isEmpty()) {
             Area area = new Area();
-            area.setNome("Sem Categoria");
-            area.setCor("#808080"); // Cor cinza padrão ou qualquer outra cor que você preferir
+            area.setName("Sem Categoria");
+            area.setColor("#808080");
             areaRepository.save(area);
         }
     }
 
     public Area criarArea(AreaDTO areaDTO) {
         Area area = new Area();
-        area.setNome(areaDTO.nome());
-        area.setCor(areaDTO.cor());
+        area.setName(areaDTO.name());
+        area.setColor(areaDTO.color());
         return areaRepository.save(area);
     }
 
@@ -44,10 +44,10 @@ public class AreaService {
         return areas.stream()
                 .map(area -> new AreaResponseDTO(
                         area.getId(),
-                        area.getNome(),
-                        area.getCor(),
+                        area.getName(),
+                        area.getColor(),
                         area.getSubareas().stream()
-                                .map(subarea -> new SubareaResponseDTO(subarea.getId(), subarea.getNome()))
+                                .map(subarea -> new SubareaResponseDTO(subarea.getId(), subarea.getName()))
                                 .toList()
                 ))
                 .collect(Collectors.toList());
@@ -61,8 +61,8 @@ public class AreaService {
         Optional<Area> areaOptional = areaRepository.findById(id);
         if (areaOptional.isPresent()) {
             Area area = areaOptional.get();
-            area.setNome(areaDTO.nome());
-            area.setCor(areaDTO.cor());
+            area.setName(areaDTO.name());
+            area.setColor(areaDTO.color());
             return areaRepository.save(area);
         }
         return null;
