@@ -26,7 +26,7 @@ public class AreaService {
         if (areaSemCategoria.isEmpty()) {
             Area area = new Area();
             area.setName("Sem Categoria");
-            area.setColor("#808080");
+            area.setColor("#000000");
             areaRepository.save(area);
         }
     }
