@@ -6,6 +6,8 @@ import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.models.Subarea;
 import com.matheus.api_abito_arcano.repositories.AreaRepository;
 import com.matheus.api_abito_arcano.repositories.SubareaRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,8 @@ import java.util.UUID;
 
 @Service
 public class SubareaService {
+
+    private static final Logger logger = LoggerFactory.getLogger(TarefaService.class);
 
     @Autowired
     private SubareaRepository subareaRepository;
@@ -44,6 +48,10 @@ public class SubareaService {
         return subareaRepository.findById(id);
     }
 
+    public List<Subarea> buscarPorAreaId(UUID areaId) {
+        return subareaRepository.findByAreaId(areaId);
+    }
+
     public Subarea atualizarSubarea(UUID id, SubareaDTO subareaDTO) {
         Optional<Subarea> subareaOptional = subareaRepository.findById(id);
 
@@ -61,8 +69,11 @@ public class SubareaService {
         Optional<Subarea> subareaOptional = subareaRepository.findById(id);
         if (subareaOptional.isPresent()) {
             subareaRepository.delete(subareaOptional.get());
+            logger.info("Subárea deletada: {}", id);
             return true;
         }
+
+        logger.info("Subárea não encontrada: {}", id);
         return false;
     }
 }

@@ -39,6 +39,12 @@ public class SubareaController {
         return subarea.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/area/{areaId}")
+    public ResponseEntity<List<Subarea>> buscarPorAreaId(@PathVariable UUID areaId) {
+        List<Subarea> subareas = subareaService.buscarPorAreaId(areaId);
+        return ResponseEntity.ok(subareas);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Subarea> atualizarSubarea(@PathVariable UUID id, @RequestBody @Valid SubareaDTO subareaDTO) {
         try {
@@ -53,4 +59,5 @@ public class SubareaController {
     public ResponseEntity<Void> deletarSubarea(@PathVariable UUID id) {
         return subareaService.deletarSubarea(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
+
 }
