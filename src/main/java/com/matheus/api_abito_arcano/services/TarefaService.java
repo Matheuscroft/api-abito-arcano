@@ -12,6 +12,7 @@ import com.matheus.api_abito_arcano.models.Tarefa;
 import com.matheus.api_abito_arcano.repositories.AreaRepository;
 import com.matheus.api_abito_arcano.repositories.SubareaRepository;
 import com.matheus.api_abito_arcano.repositories.TarefaRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,10 +68,13 @@ public class TarefaService {
 
                 logger.info("Subárea encontrada: {}", subarea.getName());
 
-                if (!subarea.getArea().equals(area)) {
-                    logger.error("A subárea '{}' não pertence à área '{}'", subarea.getName(), area.getName());
+                if (!subarea.getArea().getId().equals(area.getId())) {
+                    logger.error("A subárea '{}' pertence à área '{}' ({}) mas foi passada a área '{}' ({})",
+                            subarea.getName(), subarea.getArea().getName(), subarea.getArea().getId(),
+                            area.getName(), area.getId());
                     throw new InvalidAreaException("A subárea fornecida não pertence à área fornecida.");
                 }
+
             } else {
                 logger.error("Subárea com ID {} não encontrada!", tarefaDto.subareaId());
                 throw new SubareaNotFoundException(tarefaDto.subareaId());
@@ -84,6 +88,7 @@ public class TarefaService {
         tarefa.setArea(area);
 
         if (subarea != null) {
+            logger.info("Subárea encontrada: {} - Área associada: {}", subarea.getName(), subarea.getArea());
             tarefa.setSubarea(subarea);
         }
 
@@ -114,6 +119,29 @@ public class TarefaService {
             tarefa.setTitle(tarefaDTO.title());
             tarefa.setScore(tarefaDTO.score());
             tarefa.setDaysOfTheWeek(tarefaDTO.daysOfTheWeek());
+
+            if (tarefaDTO.areaId() == null) {
+                tarefa.setArea(null);
+            } else {
+                Optional<Area> areaOptional = areaRepository.findById(tarefaDTO.areaId());
+                if (areaOptional.isPresent()) {
+                    tarefa.setArea(areaOptional.get());
+                } else {
+                    throw new AreaNotFoundException(tarefaDTO.areaId());
+                }
+            }
+
+            if (tarefaDTO.subareaId() == null) {
+                tarefa.setSubarea(null);
+            } else {
+                Optional<Subarea> subareaOptional = subareaRepository.findById(tarefaDTO.subareaId());
+                if (subareaOptional.isPresent()) {
+                    tarefa.setSubarea(subareaOptional.get());
+                } else {
+                    throw new SubareaNotFoundException(tarefaDTO.subareaId());
+                }
+            }
+
             return tarefaRepository.save(tarefa);
         }
         return null;

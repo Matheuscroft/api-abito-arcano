@@ -1,9 +1,7 @@
 package com.matheus.api_abito_arcano.controllers;
 
 import com.matheus.api_abito_arcano.dtos.AreaDTO;
-import com.matheus.api_abito_arcano.dtos.SubareaDTO;
 import com.matheus.api_abito_arcano.dtos.response.AreaResponseDTO;
-import com.matheus.api_abito_arcano.dtos.response.SubareaResponseDTO;
 import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.services.AreaService;
 import jakarta.validation.Valid;

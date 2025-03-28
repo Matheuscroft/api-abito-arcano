@@ -2,7 +2,7 @@ package com.matheus.api_abito_arcano.services;
 
 import com.matheus.api_abito_arcano.dtos.AreaDTO;
 import com.matheus.api_abito_arcano.dtos.response.AreaResponseDTO;
-import com.matheus.api_abito_arcano.dtos.response.SubareaResponseDTO;
+import com.matheus.api_abito_arcano.dtos.response.SubareaSimpleResponseDTO;
 import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.repositories.AreaRepository;
 import jakarta.annotation.PostConstruct;
@@ -47,7 +47,7 @@ public class AreaService {
                         area.getName(),
                         area.getColor(),
                         area.getSubareas().stream()
-                                .map(subarea -> new SubareaResponseDTO(subarea.getId(), subarea.getName()))
+                                .map(subarea -> new SubareaSimpleResponseDTO(subarea.getId(), subarea.getName()))
                                 .toList()
                 ))
                 .collect(Collectors.toList());

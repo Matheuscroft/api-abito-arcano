@@ -8,6 +8,6 @@ public record AreaResponseDTO(
         UUID id,
         String name,
         String color,
-        List<SubareaResponseDTO> subareas
+        List<SubareaSimpleResponseDTO> subareas
 ) {
 }
