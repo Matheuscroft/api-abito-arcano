@@ -2,6 +2,7 @@ package com.matheus.api_abito_arcano.controllers;
 
 import com.matheus.api_abito_arcano.dtos.AreaDTO;
 import com.matheus.api_abito_arcano.dtos.response.AreaResponseDTO;
+import com.matheus.api_abito_arcano.mappers.AreaMapper;
 import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.services.AreaService;
 import jakarta.validation.Valid;
@@ -24,9 +25,8 @@ public class AreaController {
     @PostMapping
     public ResponseEntity<AreaResponseDTO> criarArea(@RequestBody @Valid AreaDTO areaDTO) {
         Area area = areaService.criarArea(areaDTO);
-        return ResponseEntity.ok(areaService.convertToResponseDTO(area));
+        return ResponseEntity.ok(AreaMapper.toDTO(area));
     }
-
 
     @GetMapping
     public ResponseEntity<List<AreaResponseDTO>> listarAreas() {
@@ -37,7 +37,7 @@ public class AreaController {
     @GetMapping("/{id}")
     public ResponseEntity<AreaResponseDTO> buscarPorId(@PathVariable UUID id) {
         return areaService.buscarPorId(id)
-                .map(area -> ResponseEntity.ok(areaService.convertToResponseDTO(area)))
+                .map(area -> ResponseEntity.ok(AreaMapper.toDTO(area)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -45,7 +45,7 @@ public class AreaController {
     @PutMapping("/{id}")
     public ResponseEntity<AreaResponseDTO> atualizarArea(@PathVariable UUID id, @RequestBody @Valid AreaDTO areaDTO) {
         Area area = areaService.atualizarArea(id, areaDTO);
-        return (area != null) ? ResponseEntity.ok(areaService.convertToResponseDTO(area)) : ResponseEntity.notFound().build();
+        return (area != null) ? ResponseEntity.ok(AreaMapper.toDTO(area)) : ResponseEntity.notFound().build();
     }
 
 

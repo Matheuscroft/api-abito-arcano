@@ -19,9 +19,10 @@ public class Area {
     private String name;
     private String color;
 
-    @OneToMany(mappedBy = "area", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "area", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonIgnoreProperties("area")
     private List<Subarea> subareas = new ArrayList<>();
+
 
     @ManyToOne
     @JoinColumn(name = "user_id")

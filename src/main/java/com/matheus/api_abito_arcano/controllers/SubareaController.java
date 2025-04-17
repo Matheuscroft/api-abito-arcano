@@ -3,6 +3,7 @@ package com.matheus.api_abito_arcano.controllers;
 import com.matheus.api_abito_arcano.dtos.SubareaDTO;
 import com.matheus.api_abito_arcano.dtos.response.AreaResponseDTO;
 import com.matheus.api_abito_arcano.dtos.response.SubareaResponseDTO;
+import com.matheus.api_abito_arcano.mappers.SubareaMapper;
 import com.matheus.api_abito_arcano.models.Subarea;
 import com.matheus.api_abito_arcano.services.SubareaService;
 import com.matheus.api_abito_arcano.services.TarefaService;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/subareas")
@@ -28,37 +30,46 @@ public class SubareaController {
     private SubareaService subareaService;
 
     @PostMapping
-    public ResponseEntity<Subarea> criarSubarea(@RequestBody @Valid SubareaDTO subareaDTO) {
+    public ResponseEntity<SubareaResponseDTO> criarSubarea(@RequestBody @Valid SubareaDTO subareaDTO) {
         try {
-            return ResponseEntity.ok(subareaService.criarSubarea(subareaDTO));
+            Subarea subarea = subareaService.criarSubarea(subareaDTO);
+            return ResponseEntity.ok(SubareaMapper.toDTO(subarea));
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(null);
         }
     }
 
+
     @GetMapping
     public ResponseEntity<List<SubareaResponseDTO>> listarSubareas() {
-        List<SubareaResponseDTO> subareaResponseDTOs = subareaService.listarSubareas();
+        List<SubareaResponseDTO> subareaResponseDTOs = subareaService.buscarPorUsuarioAutenticado();
         return ResponseEntity.ok(subareaResponseDTOs);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Subarea> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<SubareaResponseDTO> buscarPorId(@PathVariable UUID id) {
         Optional<Subarea> subarea = subareaService.buscarPorId(id);
-        return subarea.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return subarea
+                .map(s -> ResponseEntity.ok(SubareaMapper.toDTO(s)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
 
     @GetMapping("/area/{areaId}")
-    public ResponseEntity<List<Subarea>> buscarPorAreaId(@PathVariable UUID areaId) {
+    public ResponseEntity<List<SubareaResponseDTO>> buscarPorAreaId(@PathVariable UUID areaId) {
         List<Subarea> subareas = subareaService.buscarPorAreaId(areaId);
-        return ResponseEntity.ok(subareas);
+        List<SubareaResponseDTO> dtos = subareas.stream()
+                .map(SubareaMapper::toDTO)
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 
+
     @PutMapping("/{id}")
-    public ResponseEntity<Subarea> atualizarSubarea(@PathVariable UUID id, @RequestBody @Valid SubareaDTO subareaDTO) {
+    public ResponseEntity<SubareaResponseDTO> atualizarSubarea(@PathVariable UUID id, @RequestBody @Valid SubareaDTO subareaDTO) {
         try {
             Subarea subarea = subareaService.atualizarSubarea(id, subareaDTO);
-            return (subarea != null) ? ResponseEntity.ok(subarea) : ResponseEntity.notFound().build();
+            return ResponseEntity.ok(SubareaMapper.toDTO(subarea));
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(null);
         }
@@ -76,6 +87,8 @@ public class SubareaController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Erro: Subárea não encontrada.");
         }
     }
+
+
 
 
 }

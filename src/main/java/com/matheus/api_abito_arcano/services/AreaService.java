@@ -3,6 +3,7 @@ package com.matheus.api_abito_arcano.services;
 import com.matheus.api_abito_arcano.dtos.AreaDTO;
 import com.matheus.api_abito_arcano.dtos.response.AreaResponseDTO;
 import com.matheus.api_abito_arcano.dtos.response.SubareaSimpleResponseDTO;
+import com.matheus.api_abito_arcano.mappers.AreaMapper;
 import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.models.User;
 import com.matheus.api_abito_arcano.repositories.AreaRepository;
@@ -39,14 +40,7 @@ public class AreaService {
         List<Area> areas = areaRepository.findByUserId(user.getId());
 
         return areas.stream()
-                .map(area -> new AreaResponseDTO(
-                        area.getId(),
-                        area.getName(),
-                        area.getColor(),
-                        area.getSubareas().stream()
-                                .map(subarea -> new SubareaSimpleResponseDTO(subarea.getId(), subarea.getName()))
-                                .toList()
-                ))
+                .map(AreaMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
@@ -102,19 +96,8 @@ public class AreaService {
     }
 
 
-    private User getUsuarioAutenticado() {
+    public User getUsuarioAutenticado() {
         return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    }
-
-    public AreaResponseDTO convertToResponseDTO(Area area) {
-        return new AreaResponseDTO(
-                area.getId(),
-                area.getName(),
-                area.getColor(),
-                area.getSubareas().stream()
-                        .map(subarea -> new SubareaSimpleResponseDTO(subarea.getId(), subarea.getName()))
-                        .toList()
-        );
     }
 
 }

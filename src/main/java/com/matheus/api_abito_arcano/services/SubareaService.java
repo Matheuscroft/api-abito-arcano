@@ -5,8 +5,10 @@ import com.matheus.api_abito_arcano.dtos.response.AreaResponseDTO;
 import com.matheus.api_abito_arcano.dtos.response.SubareaResponseDTO;
 import com.matheus.api_abito_arcano.dtos.response.SubareaSimpleResponseDTO;
 import com.matheus.api_abito_arcano.exceptions.AreaNotFoundException;
+import com.matheus.api_abito_arcano.mappers.SubareaMapper;
 import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.models.Subarea;
+import com.matheus.api_abito_arcano.models.User;
 import com.matheus.api_abito_arcano.repositories.AreaRepository;
 import com.matheus.api_abito_arcano.repositories.SubareaRepository;
 import org.slf4j.Logger;
@@ -30,9 +32,14 @@ public class SubareaService {
     @Autowired
     private AreaRepository areaRepository;
 
+    @Autowired
+    private AreaService areaService;
+
     public Subarea criarSubarea(SubareaDTO subareaDTO) {
 
-        Optional<Area> areaOptional = areaRepository.findById(subareaDTO.areaId());
+        User user = areaService.getUsuarioAutenticado();
+        Optional<Area> areaOptional = areaRepository.findByIdAndUserId(subareaDTO.areaId(), user.getId());
+
         if (areaOptional.isEmpty()) {
             throw new AreaNotFoundException(subareaDTO.areaId());
         }
@@ -45,7 +52,6 @@ public class SubareaService {
     }
 
     public List<SubareaResponseDTO> listarSubareas() {
-        //return subareaRepository.findAll();
 
         List<Subarea> subareas = subareaRepository.findAll();
 
@@ -59,35 +65,76 @@ public class SubareaService {
     }
 
     public Optional<Subarea> buscarPorId(UUID id) {
-        return subareaRepository.findById(id);
+        User user = areaService.getUsuarioAutenticado();
+        return subareaRepository.findByIdAndArea_User_Id(id, user.getId());
     }
 
     public List<Subarea> buscarPorAreaId(UUID areaId) {
+        User user = areaService.getUsuarioAutenticado();
+
+        Optional<Area> areaOptional = areaRepository.findByIdAndUserId(areaId, user.getId());
+        if (areaOptional.isEmpty()) {
+            throw new IllegalStateException("Área não encontrada ou não pertence ao usuário.");
+        }
+
         return subareaRepository.findByAreaId(areaId);
     }
 
+
     public Subarea atualizarSubarea(UUID id, SubareaDTO subareaDTO) {
-        Optional<Subarea> subareaOptional = subareaRepository.findById(id);
+        User user = areaService.getUsuarioAutenticado();
+
+        Optional<Subarea> subareaOptional = subareaRepository.findByIdAndArea_User_Id(id, user.getId());
+        if (subareaOptional.isEmpty()) {
+            throw new IllegalStateException("Subárea não encontrada ou não pertence ao usuário.");
+        }
+
+        Subarea subarea = subareaOptional.get();
+
+        Optional<Area> areaOptional = areaRepository.findByIdAndUserId(subareaDTO.areaId(), user.getId());
+        if (areaOptional.isEmpty()) {
+            throw new IllegalStateException("Área fornecida não pertence ao usuário.");
+        }
+
+        if (!subarea.getArea().getId().equals(subareaDTO.areaId())) {
+            throw new IllegalStateException("A subárea não pertence à área informada.");
+        }
+
+        subarea.setName(subareaDTO.name());
+
+        return subareaRepository.save(subarea);
+    }
+
+
+
+    public boolean deletarSubarea(UUID id) {
+        User user = areaService.getUsuarioAutenticado();
+        Optional<Subarea> subareaOptional = subareaRepository.findByIdAndArea_User_Id(id, user.getId());
 
         if (subareaOptional.isPresent()) {
             Subarea subarea = subareaOptional.get();
-            subarea.setName(subareaDTO.name());
+            Area area = subarea.getArea();
 
-            return subareaRepository.save(subarea);
-        }
+            area.getSubareas().remove(subarea);
+            areaRepository.save(area);
 
-        return null;
-    }
-
-    public boolean deletarSubarea(UUID id) {
-        Optional<Subarea> subareaOptional = subareaRepository.findById(id);
-        if (subareaOptional.isPresent()) {
-            subareaRepository.delete(subareaOptional.get());
-            logger.info("Subárea deletada: {}", id);
+            logger.info("Subárea removida da lista da área: {}", subarea.getId());
             return true;
         }
 
-        logger.info("Subárea não encontrada: {}", id);
+        logger.info("Subárea não encontrada ou não pertence ao usuário: {}", id);
         return false;
     }
+
+
+
+    public List<SubareaResponseDTO> buscarPorUsuarioAutenticado() {
+        User user = areaService.getUsuarioAutenticado();
+        List<Subarea> subareas = subareaRepository.findByUserId(user.getId());
+
+        return subareas.stream()
+                .map(SubareaMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
 }

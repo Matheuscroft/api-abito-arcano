@@ -13,5 +13,6 @@ public interface AreaRepository extends JpaRepository<Area, UUID> {
     Optional<Area> findByName(String name);
     List<Area> findByUserId(UUID userId);
     Optional<Area> findByNameAndUserId(String name, UUID userId);
+    Optional<Area> findByIdAndUserId(UUID id, UUID userId);
 
 }
