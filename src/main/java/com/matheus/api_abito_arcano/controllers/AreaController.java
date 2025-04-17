@@ -22,9 +22,11 @@ public class AreaController {
     private AreaService areaService;
 
     @PostMapping
-    public ResponseEntity<Area> criarArea(@RequestBody @Valid AreaDTO areaDTO) {
-        return ResponseEntity.ok(areaService.criarArea(areaDTO));
+    public ResponseEntity<AreaResponseDTO> criarArea(@RequestBody @Valid AreaDTO areaDTO) {
+        Area area = areaService.criarArea(areaDTO);
+        return ResponseEntity.ok(areaService.convertToResponseDTO(area));
     }
+
 
     @GetMapping
     public ResponseEntity<List<AreaResponseDTO>> listarAreas() {
@@ -33,17 +35,19 @@ public class AreaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Area> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<AreaResponseDTO> buscarPorId(@PathVariable UUID id) {
         return areaService.buscarPorId(id)
-                .map(ResponseEntity::ok)
+                .map(area -> ResponseEntity.ok(areaService.convertToResponseDTO(area)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+
     @PutMapping("/{id}")
-    public ResponseEntity<Area> atualizarArea(@PathVariable UUID id, @RequestBody @Valid AreaDTO areaDTO) {
+    public ResponseEntity<AreaResponseDTO> atualizarArea(@PathVariable UUID id, @RequestBody @Valid AreaDTO areaDTO) {
         Area area = areaService.atualizarArea(id, areaDTO);
-        return (area != null) ? ResponseEntity.ok(area) : ResponseEntity.notFound().build();
+        return (area != null) ? ResponseEntity.ok(areaService.convertToResponseDTO(area)) : ResponseEntity.notFound().build();
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarArea(@PathVariable UUID id) {

@@ -1,8 +1,6 @@
 package com.matheus.api_abito_arcano.exceptions;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 @Data
 public class ApiError {

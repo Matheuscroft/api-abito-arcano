@@ -2,6 +2,8 @@ package com.matheus.api_abito_arcano.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,7 +21,11 @@ public class Area {
 
     @OneToMany(mappedBy = "area", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonIgnoreProperties("area")
-    private List<Subarea> subareas;
+    private List<Subarea> subareas = new ArrayList<>();
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     public UUID getId() {
         return id;
@@ -51,5 +57,13 @@ public class Area {
 
     public void setSubareas(List<Subarea> subareas) {
         this.subareas = subareas;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }
