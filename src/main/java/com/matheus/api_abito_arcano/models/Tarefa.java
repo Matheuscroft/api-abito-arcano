@@ -32,6 +32,10 @@ public class Tarefa {
     @JoinColumn(name = "subarea_id", referencedColumnName = "id")
     private Subarea subarea;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
+
     public UUID getId() {
         return id;
     }
@@ -79,4 +83,13 @@ public class Tarefa {
     public void setSubarea(Subarea subarea) {
         this.subarea = subarea;
     }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
 }

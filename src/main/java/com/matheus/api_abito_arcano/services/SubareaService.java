@@ -33,11 +33,11 @@ public class SubareaService {
     private AreaRepository areaRepository;
 
     @Autowired
-    private AreaService areaService;
+    private UserService userService;
 
     public Subarea criarSubarea(SubareaDTO subareaDTO) {
 
-        User user = areaService.getUsuarioAutenticado();
+        User user = userService.getUsuarioAutenticado();
         Optional<Area> areaOptional = areaRepository.findByIdAndUserId(subareaDTO.areaId(), user.getId());
 
         if (areaOptional.isEmpty()) {
@@ -65,12 +65,12 @@ public class SubareaService {
     }
 
     public Optional<Subarea> buscarPorId(UUID id) {
-        User user = areaService.getUsuarioAutenticado();
+        User user = userService.getUsuarioAutenticado();
         return subareaRepository.findByIdAndArea_User_Id(id, user.getId());
     }
 
     public List<Subarea> buscarPorAreaId(UUID areaId) {
-        User user = areaService.getUsuarioAutenticado();
+        User user = userService.getUsuarioAutenticado();
 
         Optional<Area> areaOptional = areaRepository.findByIdAndUserId(areaId, user.getId());
         if (areaOptional.isEmpty()) {
@@ -82,7 +82,7 @@ public class SubareaService {
 
 
     public Subarea atualizarSubarea(UUID id, SubareaDTO subareaDTO) {
-        User user = areaService.getUsuarioAutenticado();
+        User user = userService.getUsuarioAutenticado();
 
         Optional<Subarea> subareaOptional = subareaRepository.findByIdAndArea_User_Id(id, user.getId());
         if (subareaOptional.isEmpty()) {
@@ -108,7 +108,7 @@ public class SubareaService {
 
 
     public boolean deletarSubarea(UUID id) {
-        User user = areaService.getUsuarioAutenticado();
+        User user = userService.getUsuarioAutenticado();
         Optional<Subarea> subareaOptional = subareaRepository.findByIdAndArea_User_Id(id, user.getId());
 
         if (subareaOptional.isPresent()) {
@@ -129,7 +129,7 @@ public class SubareaService {
 
 
     public List<SubareaResponseDTO> buscarPorUsuarioAutenticado() {
-        User user = areaService.getUsuarioAutenticado();
+        User user = userService.getUsuarioAutenticado();
         List<Subarea> subareas = subareaRepository.findByUserId(user.getId());
 
         return subareas.stream()

@@ -23,8 +23,11 @@ public class AreaService {
     @Autowired
     private AreaRepository areaRepository;
 
+    @Autowired
+    private UserService userService;
+
     public Area criarArea(AreaDTO areaDTO) {
-        User user = getUsuarioAutenticado();
+        User user = userService.getUsuarioAutenticado();
 
         Area area = new Area();
         area.setName(areaDTO.name());
@@ -36,7 +39,7 @@ public class AreaService {
 
 
     public List<AreaResponseDTO> listarAreas() {
-        User user = getUsuarioAutenticado();
+        User user = userService.getUsuarioAutenticado();
         List<Area> areas = areaRepository.findByUserId(user.getId());
 
         return areas.stream()
@@ -45,14 +48,14 @@ public class AreaService {
     }
 
     public Optional<Area> buscarPorId(UUID id) {
-        User user = getUsuarioAutenticado();
+        User user = userService.getUsuarioAutenticado();
         return areaRepository.findById(id)
                 .filter(area -> area.getUser().getId().equals(user.getId()));
     }
 
 
     public Area atualizarArea(UUID id, AreaDTO areaDTO) {
-        User user = getUsuarioAutenticado();
+        User user = userService.getUsuarioAutenticado();
         Optional<Area> areaOptional = areaRepository.findById(id);
 
         if (areaOptional.isPresent()) {
@@ -76,7 +79,7 @@ public class AreaService {
 
 
     public boolean deletarArea(UUID id) {
-        User user = getUsuarioAutenticado();
+        User user = userService.getUsuarioAutenticado();
         Optional<Area> areaOptional = areaRepository.findById(id);
 
         if (areaOptional.isPresent()) {
@@ -93,11 +96,6 @@ public class AreaService {
             return true;
         }
         return false;
-    }
-
-
-    public User getUsuarioAutenticado() {
-        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
 }
