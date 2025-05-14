@@ -3,6 +3,7 @@ package com.matheus.api_abito_arcano.services;
 import com.matheus.api_abito_arcano.dtos.AreaDTO;
 import com.matheus.api_abito_arcano.dtos.response.AreaResponseDTO;
 import com.matheus.api_abito_arcano.dtos.response.SubareaSimpleResponseDTO;
+import com.matheus.api_abito_arcano.exceptions.AreaNotFoundException;
 import com.matheus.api_abito_arcano.mappers.AreaMapper;
 import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.models.User;
@@ -97,5 +98,23 @@ public class AreaService {
         }
         return false;
     }
+
+    public Area getAreaOrThrow(UUID areaId) {
+        return areaRepository.findById(areaId)
+                .orElseThrow(() -> new AreaNotFoundException(areaId));
+    }
+
+    public Area getValidOrDefaultArea(UUID areaId, UUID userId) {
+        if (areaId != null) {
+            Optional<Area> optionalArea = areaRepository.findByIdAndUserId(areaId, userId);
+            if (optionalArea.isPresent()) {
+                return optionalArea.get();
+            }
+        }
+
+        return areaRepository.findByNameAndUserId("Sem Categoria", userId)
+                .orElseThrow(() -> new AreaNotFoundException(UUID.randomUUID()));
+    }
+
 
 }

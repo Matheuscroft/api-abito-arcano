@@ -23,8 +23,10 @@ public class TarefaController {
     private TarefaService tarefaService;
 
     @PostMapping
-    public ResponseEntity<TarefaResponseDTO> criarTarefa(@RequestBody @Valid TarefaDTO tarefaDto) {
-        Tarefa tarefa = tarefaService.criarTarefa(tarefaDto);
+    public ResponseEntity<TarefaResponseDTO> criarTarefa(
+            @RequestBody @Valid TarefaDTO tarefaDto,
+            @RequestParam UUID dayId) {
+        Tarefa tarefa = tarefaService.criarTarefa(tarefaDto, dayId);
         return ResponseEntity.ok(new TarefaResponseDTO(tarefa));
     }
 
@@ -49,15 +51,30 @@ public class TarefaController {
         }
     }
 
+
     @PutMapping("/{id}")
-    public ResponseEntity<TarefaResponseDTO> atualizarTarefa(@PathVariable UUID id, @RequestBody @Valid TarefaDTO tarefaDTO) {
-        Tarefa tarefa = tarefaService.atualizarTarefa(id, tarefaDTO);
+    public ResponseEntity<TarefaResponseDTO> atualizarTarefa(
+            @PathVariable UUID id,
+            @RequestBody @Valid TarefaDTO tarefaDTO,
+            @RequestParam UUID dayId) {
+
+        Tarefa tarefa = tarefaService.atualizarTarefa(id, tarefaDTO, dayId);
         return (tarefa != null) ? ResponseEntity.ok(new TarefaResponseDTO(tarefa)) : ResponseEntity.notFound().build();
     }
 
+
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarTarefa(@PathVariable UUID id) {
-        return tarefaService.deletarTarefa(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    public ResponseEntity<Void> deletarTarefa(@PathVariable UUID id, @RequestParam UUID dayId) {
+        boolean deleted = tarefaService.deletarTarefa(id, dayId);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
+
+    @DeleteMapping("/all")
+    public ResponseEntity<Void> deletarTodasAsTarefasDoUsuario() {
+        tarefaService.deletarTodasAsTarefas();
+        return ResponseEntity.noContent().build();
+    }
+
 
 }

@@ -7,6 +7,7 @@ import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.models.User;
 import com.matheus.api_abito_arcano.repositories.AreaRepository;
 import com.matheus.api_abito_arcano.repositories.UserRepository;
+import com.matheus.api_abito_arcano.services.AuthService;
 import com.matheus.api_abito_arcano.services.TokenService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,7 @@ public class AuthenticationController {
     @Autowired
     private TokenService tokenService;
     @Autowired
-    private AreaRepository areaRepository;
+    private AuthService authService;
 
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody @Valid AuthenticationDTO authenticationDTO){
@@ -49,19 +50,7 @@ public class AuthenticationController {
             return ResponseEntity.badRequest().build();
         }
 
-        String encryptedPassword = new BCryptPasswordEncoder().encode(registerDTO.password());
-        User user = new User();
-        user.setLogin(registerDTO.login());
-        user.setPassword(encryptedPassword);
-        user.setRole(registerDTO.role());
-
-        user = userRepository.save(user);
-
-        Area area = new Area();
-        area.setName("Sem Categoria");
-        area.setColor("#000000");
-        area.setUser(user);
-        areaRepository.save(area);
+        authService.registerUser(registerDTO);
 
         return ResponseEntity.ok().build();
     }

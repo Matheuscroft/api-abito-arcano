@@ -5,6 +5,8 @@ import com.matheus.api_abito_arcano.dtos.response.AreaResponseDTO;
 import com.matheus.api_abito_arcano.dtos.response.SubareaResponseDTO;
 import com.matheus.api_abito_arcano.dtos.response.SubareaSimpleResponseDTO;
 import com.matheus.api_abito_arcano.exceptions.AreaNotFoundException;
+import com.matheus.api_abito_arcano.exceptions.InvalidAreaException;
+import com.matheus.api_abito_arcano.exceptions.SubareaNotFoundException;
 import com.matheus.api_abito_arcano.mappers.SubareaMapper;
 import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.models.Subarea;
@@ -105,8 +107,6 @@ public class SubareaService {
         return subareaRepository.save(subarea);
     }
 
-
-
     public boolean deletarSubarea(UUID id) {
         User user = userService.getUsuarioAutenticado();
         Optional<Subarea> subareaOptional = subareaRepository.findByIdAndArea_User_Id(id, user.getId());
@@ -126,8 +126,6 @@ public class SubareaService {
         return false;
     }
 
-
-
     public List<SubareaResponseDTO> buscarPorUsuarioAutenticado() {
         User user = userService.getUsuarioAutenticado();
         List<Subarea> subareas = subareaRepository.findByUserId(user.getId());
@@ -136,5 +134,36 @@ public class SubareaService {
                 .map(SubareaMapper::toDTO)
                 .collect(Collectors.toList());
     }
+
+    public Subarea getSubareaOrThrow(UUID subareaId, Area area) {
+        Subarea subarea = subareaRepository.findById(subareaId)
+                .orElseThrow(() -> new SubareaNotFoundException(subareaId));
+
+        if (area != null && !subarea.getArea().getId().equals(area.getId())) {
+            throw new InvalidAreaException("A subárea fornecida não pertence à área fornecida.");
+        }
+
+        return subarea;
+    }
+
+    public Subarea getValidSubarea(UUID subareaId, Area area, UUID userId) {
+        if (subareaId == null) return null;
+
+        Optional<Subarea> optionalSubarea = subareaRepository.findByIdAndArea_User_Id(subareaId, userId);
+
+        if (optionalSubarea.isEmpty()) {
+            throw new SubareaNotFoundException(subareaId);
+        }
+
+        Subarea subarea = optionalSubarea.get();
+
+        if (!subarea.getArea().getId().equals(area.getId())) {
+            throw new InvalidAreaException("The provided subarea does not belong to the specified area.");
+        }
+
+        return subarea;
+    }
+
+
 
 }

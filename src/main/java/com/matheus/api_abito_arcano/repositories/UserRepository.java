@@ -10,4 +10,7 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
 
     UserDetails findByLogin(String login);
+    void deleteById(UUID id);
+    boolean existsByLogin(String login);
+
 }

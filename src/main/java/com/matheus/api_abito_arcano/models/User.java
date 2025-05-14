@@ -23,6 +23,18 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Tarefa> tarefas;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Area> areas;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Day> days;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Score> scores;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         if(role == UserRole.ADMIN){
@@ -60,5 +72,13 @@ public class User implements UserDetails {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public String getLogin() {
+        return login;
+    }
+
+    public UserRole getRole() {
+        return role;
     }
 }
