@@ -1,6 +1,8 @@
 package com.matheus.api_abito_arcano.dtos.response;
 
 import com.matheus.api_abito_arcano.models.Tarefa;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -10,7 +12,10 @@ public record TarefaResponseDTO(
         int score,
         List<Integer> daysOfTheWeek,
         UUID areaId,
-        UUID subareaId
+        UUID subareaId,
+        LocalDateTime createdAt,
+        UUID originalTaskId,
+        boolean isLatestVersion
 ) {
     public TarefaResponseDTO(Tarefa tarefa) {
         this(
@@ -19,7 +24,10 @@ public record TarefaResponseDTO(
                 tarefa.getScore(),
                 tarefa.getDaysOfTheWeek(),
                 tarefa.getArea().getId(),
-                tarefa.getSubarea() != null ? tarefa.getSubarea().getId() : null
+                tarefa.getSubarea() != null ? tarefa.getSubarea().getId() : null,
+                tarefa.getCreatedAt(),
+                tarefa.getOriginalTask() != null ? tarefa.getOriginalTask().getId() : null,
+                tarefa.isLatestVersion()
         );
     }
 }

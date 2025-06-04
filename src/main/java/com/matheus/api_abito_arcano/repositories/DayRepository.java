@@ -14,10 +14,6 @@ import java.util.UUID;
 
 public interface DayRepository extends JpaRepository<Day, UUID> {
 
-    List<Day> findByUser(User user);
-
-    Optional<Day> findByUserAndDate(User user, LocalDate date);
-
     List<Day> findByUserId(UUID userId);
     boolean existsByUserId(UUID userId);
 
@@ -40,6 +36,12 @@ public interface DayRepository extends JpaRepository<Day, UUID> {
     boolean existsByUserIdAndTarefasPrevistasContaining(UUID userId, Tarefa tarefa);
 
     List<Day> findAllByUserId(UUID userId);
+
+    @Query("SELECT d FROM Day d JOIN d.tarefasPrevistas t WHERE t.id = :tarefaId AND d.user.id = :userId")
+    Day findByTarefaIdAndUserId(@Param("tarefaId") UUID tarefaId, @Param("userId") UUID userId);
+
+    @Query("SELECT d FROM Day d LEFT JOIN FETCH d.tarefasPrevistas WHERE d.user.id = :userId AND d.date < :cutoffDate")
+    List<Day> findAllByUserIdAndDateLessThanWithTarefas(@Param("userId") UUID userId, @Param("cutoffDate") LocalDate cutoffDate);
 
 
 }

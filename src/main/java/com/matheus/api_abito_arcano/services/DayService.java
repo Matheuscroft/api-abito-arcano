@@ -10,6 +10,7 @@ import com.matheus.api_abito_arcano.models.Day;
 import com.matheus.api_abito_arcano.models.Tarefa;
 import com.matheus.api_abito_arcano.models.User;
 import com.matheus.api_abito_arcano.repositories.DayRepository;
+import com.matheus.api_abito_arcano.repositories.TarefaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,9 @@ public class DayService {
 
     @Autowired
     private DayRepository dayRepository;
+
+    @Autowired
+    private TarefaRepository tarefaRepository;
 
     public void createInitialDaysForUser(User user) {
 
@@ -136,7 +140,20 @@ public class DayService {
         );
     }
 
-    public void atualizarTarefasPrevistasParaDiasFuturos(Tarefa tarefa, List<Integer> diasAntigos, LocalDate fromDate) {
+    public void addTaskToDayAndFutureDays(Tarefa tarefa, UUID userId, LocalDate fromDate) {
+        List<Day> futureDays = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(userId, fromDate);
+
+        for (Day day : futureDays) {
+            int dayOfWeek = day.getDate().getDayOfWeek().getValue() % 7 + 1;
+            if (tarefa.getDaysOfTheWeek().contains(dayOfWeek)) {
+                day.getTarefasPrevistas().add(tarefa);
+            }
+        }
+
+        dayRepository.saveAll(futureDays);
+    }
+
+    public void updateTaskFromDateAndFutureDays(Tarefa tarefa, List<Integer> diasAntigos, LocalDate fromDate) {
         UUID userId = tarefa.getUser().getId();
 
         List<Day> diasFuturos = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(userId, fromDate);
@@ -160,20 +177,8 @@ public class DayService {
         dayRepository.saveAll(diasFuturos);
     }
 
-    public void associateTaskToFutureDays(Tarefa tarefa, UUID userId, LocalDate fromDate) {
-        List<Day> futureDays = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(userId, fromDate);
 
-        for (Day day : futureDays) {
-            int dayOfWeek = day.getDate().getDayOfWeek().getValue() % 7 + 1;
-            if (tarefa.getDaysOfTheWeek().contains(dayOfWeek)) {
-                day.getTarefasPrevistas().add(tarefa);
-            }
-        }
-
-        dayRepository.saveAll(futureDays);
-    }
-
-    public void removeTaskFromDayAndFutureDays(UUID userId, UUID dayId, Tarefa tarefa) {
+    public void deleteTaskFromDayAndFutureDays(UUID userId, UUID dayId, Tarefa tarefa) {
         Day fromDay = dayRepository.findByIdAndUserId(dayId, userId)
                 .orElseThrow(() -> new DayNotFoundException(dayId));
 
@@ -189,29 +194,58 @@ public class DayService {
 
 
 
-    public void adicionarTarefaAosDiasFuturos(Tarefa tarefa, LocalDate fromDate) {
-        UUID userId = tarefa.getUser().getId();
 
-        List<Day> diasFuturos = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(userId, fromDate);
-        UUID tarefaId = tarefa.getId();
+    public List<Tarefa> removerVersoesFuturasDosDias(Tarefa originalTask, LocalDate cutoffDate, UUID userId) {
+        List<Tarefa> todasVersoes = new ArrayList<>();
+        todasVersoes.add(originalTask);
+
+        List<Tarefa> outras = tarefaRepository.findAllByOriginalTask(originalTask);
+        todasVersoes.addAll(outras);
+
+        List<Day> diasFuturos = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(userId, cutoffDate);
+
+        Set<UUID> idsRemovidos = new HashSet<>();
 
         for (Day dia : diasFuturos) {
-            int diaDaSemana = dia.getDate().getDayOfWeek().getValue() % 7 + 1;
+            boolean mudou = dia.getTarefasPrevistas().removeIf(t -> {
+                boolean corresponde = todasVersoes.stream().anyMatch(v -> v.getId().equals(t.getId()));
+                if (corresponde) idsRemovidos.add(t.getId());
+                return corresponde;
+            });
 
-            if (tarefa.getDaysOfTheWeek().contains(diaDaSemana)) {
-                boolean jaTem = dia.getTarefasPrevistas().stream().anyMatch(t -> t.getId().equals(tarefaId));
-                if (!jaTem) {
-                    dia.getTarefasPrevistas().add(tarefa);
-                }
+            if (mudou) {
+                dayRepository.save(dia);
             }
         }
 
-        dayRepository.saveAll(diasFuturos);
+        return todasVersoes.stream()
+                .filter(t -> idsRemovidos.contains(t.getId()))
+                .collect(Collectors.toList());
     }
 
+    public void excluirVersoesSeNaoUsadasAntes(List<Tarefa> versoesRemovidas, LocalDate cutoffDate, UUID userId) {
+        List<Day> diasPassados = dayRepository.findAllByUserIdAndDateLessThanWithTarefas(userId, cutoffDate);
+        Set<UUID> usadasAntes = diasPassados.stream()
+                .flatMap(d -> d.getTarefasPrevistas().stream())
+                .map(Tarefa::getId)
+                .collect(Collectors.toSet());
 
+        List<Tarefa> deletar = versoesRemovidas.stream()
+                .filter(t -> !usadasAntes.contains(t.getId()))
+                .collect(Collectors.toList());
 
+        tarefaRepository.deleteAll(deletar);
+    }
 
+    public boolean seraExcluidaSeNaoUsadaAntes(Tarefa task, LocalDate cutoffDate, UUID userId) {
+        List<Day> diasPassados = dayRepository.findAllByUserIdAndDateLessThanWithTarefas(userId, cutoffDate);
+        Set<UUID> usadasAntes = diasPassados.stream()
+                .flatMap(d -> d.getTarefasPrevistas().stream())
+                .map(Tarefa::getId)
+                .collect(Collectors.toSet());
+
+        return !usadasAntes.contains(task.getId());
+    }
 
 
 }

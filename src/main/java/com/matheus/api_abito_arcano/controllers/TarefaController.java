@@ -23,16 +23,16 @@ public class TarefaController {
     private TarefaService tarefaService;
 
     @PostMapping
-    public ResponseEntity<TarefaResponseDTO> criarTarefa(
+    public ResponseEntity<TarefaResponseDTO> createTask(
             @RequestBody @Valid TarefaDTO tarefaDto,
             @RequestParam UUID dayId) {
-        Tarefa tarefa = tarefaService.criarTarefa(tarefaDto, dayId);
+        Tarefa tarefa = tarefaService.createTask(tarefaDto, dayId);
         return ResponseEntity.ok(new TarefaResponseDTO(tarefa));
     }
 
     @GetMapping
-    public ResponseEntity<List<TarefaResponseDTO>> listarTarefas() {
-        List<TarefaResponseDTO> tarefas = tarefaService.listarTarefas();
+    public ResponseEntity<List<TarefaResponseDTO>> getTasks() {
+        List<TarefaResponseDTO> tarefas = tarefaService.getTasks();
         if (!tarefas.isEmpty()) {
             return ResponseEntity.ok(tarefas);
         } else {
@@ -41,8 +41,8 @@ public class TarefaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TarefaResponseDTO> buscarPorId(@PathVariable UUID id) {
-        TarefaResponseDTO tarefaDTO = tarefaService.buscarPorId(id);
+    public ResponseEntity<TarefaResponseDTO> getTaskById(@PathVariable UUID id) {
+        TarefaResponseDTO tarefaDTO = tarefaService.getTaskById(id);
 
         if (tarefaDTO != null) {
             return ResponseEntity.ok(tarefaDTO);
@@ -53,26 +53,26 @@ public class TarefaController {
 
 
     @PutMapping("/{id}")
-    public ResponseEntity<TarefaResponseDTO> atualizarTarefa(
+    public ResponseEntity<TarefaResponseDTO> updateTask(
             @PathVariable UUID id,
             @RequestBody @Valid TarefaDTO tarefaDTO,
             @RequestParam UUID dayId) {
 
-        Tarefa tarefa = tarefaService.atualizarTarefa(id, tarefaDTO, dayId);
+        Tarefa tarefa = tarefaService.updateTask(id, tarefaDTO, dayId);
         return (tarefa != null) ? ResponseEntity.ok(new TarefaResponseDTO(tarefa)) : ResponseEntity.notFound().build();
     }
 
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarTarefa(@PathVariable UUID id, @RequestParam UUID dayId) {
-        boolean deleted = tarefaService.deletarTarefa(id, dayId);
+    public ResponseEntity<Void> deleteTask(@PathVariable UUID id, @RequestParam UUID dayId) {
+        boolean deleted = tarefaService.deleteTask(id, dayId);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/all")
-    public ResponseEntity<Void> deletarTodasAsTarefasDoUsuario() {
-        tarefaService.deletarTodasAsTarefas();
+    public ResponseEntity<Void> deleteAllUserTasks() {
+        tarefaService.deleteAllTasks();
         return ResponseEntity.noContent().build();
     }
 

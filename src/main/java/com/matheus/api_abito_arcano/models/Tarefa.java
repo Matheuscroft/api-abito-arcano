@@ -3,6 +3,7 @@ package com.matheus.api_abito_arcano.models;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,6 +36,17 @@ public class Tarefa {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "original_task_id")
+    private Tarefa originalTask;
+
+    @Column(name = "is_latest_version")
+    private boolean latestVersion = true;
+
 
     public UUID getId() {
         return id;
@@ -92,4 +104,27 @@ public class Tarefa {
         this.user = user;
     }
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Tarefa getOriginalTask() {
+        return originalTask;
+    }
+
+    public void setOriginalTask(Tarefa originalTask) {
+        this.originalTask = originalTask;
+    }
+
+    public boolean isLatestVersion() {
+        return latestVersion;
+    }
+
+    public void setLatestVersion(boolean latestVersion) {
+        this.latestVersion = latestVersion;
+    }
 }

@@ -13,5 +13,7 @@ public interface TarefaRepository extends JpaRepository<Tarefa, UUID> {
     List<Tarefa> findByUserId(UUID userId);
     Optional<Tarefa> findByIdAndUserId(UUID id, UUID userId);
     List<Tarefa> findAllByUserId(UUID userId);
+    List<Tarefa> findAllByOriginalTaskAndLatestVersionFalse(Tarefa originalTask);
+    List<Tarefa> findAllByOriginalTask(Tarefa original);
 
 }

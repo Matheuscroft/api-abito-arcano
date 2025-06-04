@@ -3,10 +3,7 @@ package com.matheus.api_abito_arcano.services;
 
 import com.matheus.api_abito_arcano.dtos.TarefaDTO;
 import com.matheus.api_abito_arcano.dtos.response.TarefaResponseDTO;
-import com.matheus.api_abito_arcano.exceptions.AreaNotFoundException;
-import com.matheus.api_abito_arcano.exceptions.InvalidAreaException;
-import com.matheus.api_abito_arcano.exceptions.SubareaNotFoundException;
-import com.matheus.api_abito_arcano.exceptions.TarefaNotFoundException;
+import com.matheus.api_abito_arcano.exceptions.*;
 import com.matheus.api_abito_arcano.models.*;
 import com.matheus.api_abito_arcano.repositories.AreaRepository;
 import com.matheus.api_abito_arcano.repositories.DayRepository;
@@ -21,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -30,12 +28,6 @@ public class TarefaService {
 
     @Autowired
     private TarefaRepository tarefaRepository;
-
-    @Autowired
-    private AreaRepository areaRepository;
-
-    @Autowired
-    private SubareaRepository subareaRepository;
 
     @Autowired
     private DayRepository dayRepository;
@@ -52,7 +44,7 @@ public class TarefaService {
     @Autowired
     private SubareaService subareaService;
 
-    public Tarefa criarTarefa(TarefaDTO tarefaDto, UUID dayId) {
+    public Tarefa createTask(TarefaDTO tarefaDto, UUID dayId) {
 
         User user = userService.getUsuarioAutenticado();
 
@@ -65,6 +57,9 @@ public class TarefaService {
         BeanUtils.copyProperties(tarefaDto, tarefa);
         tarefa.setArea(area);
         tarefa.setUser(user);
+        tarefa.setCreatedAt(LocalDateTime.now());
+        tarefa.setOriginalTask(null);
+        tarefa.setLatestVersion(true);
 
         if (subarea != null) {
             logger.info("Subárea encontrada: {} - Área associada: {}", subarea.getName(), subarea.getArea());
@@ -78,18 +73,18 @@ public class TarefaService {
         Day day = dayRepository.findByIdAndUserId(dayId, user.getId())
                 .orElseThrow(() -> new RuntimeException("Dia com ID " + dayId + " não encontrado."));
 
-        dayService.associateTaskToFutureDays(tarefa, user.getId(), day.getDate());
+        dayService.addTaskToDayAndFutureDays(tarefa, user.getId(), day.getDate());
 
         return tarefa;
     }
 
-    public List<TarefaResponseDTO> listarTarefas() {
+    public List<TarefaResponseDTO> getTasks() {
         User user = userService.getUsuarioAutenticado();
         List<Tarefa> tarefas = tarefaRepository.findByUserId(user.getId());
         return tarefas.stream().map(TarefaResponseDTO::new).toList();
     }
 
-    public TarefaResponseDTO buscarPorId(UUID id) {
+    public TarefaResponseDTO getTaskById(UUID id) {
         User user = userService.getUsuarioAutenticado();
 
         Tarefa tarefa = tarefaRepository.findByIdAndUserId(id, user.getId())
@@ -99,7 +94,7 @@ public class TarefaService {
     }
 
 
-    public Tarefa atualizarTarefa(UUID id, TarefaDTO tarefaDTO, UUID dayId) {
+    public Tarefa updateTask(UUID id, TarefaDTO tarefaDTO, UUID dayId) {
 
         User user = userService.getUsuarioAutenticado();
 
@@ -140,7 +135,7 @@ public class TarefaService {
             Day day = dayRepository.findByIdAndUserId(dayId, user.getId())
                     .orElseThrow(() -> new RuntimeException("Dia com ID " + dayId + " não encontrado."));
 
-            dayService.atualizarTarefasPrevistasParaDiasFuturos(oldTask, oldDaysOfWeek, day.getDate());
+            dayService.updateTaskFromDateAndFutureDays(oldTask, oldDaysOfWeek, day.getDate());
 
             return oldTask;
         }
@@ -149,7 +144,7 @@ public class TarefaService {
 
 
 
-    public boolean deletarTarefa(UUID tarefaId, UUID dayId) {
+    public boolean deleteTask(UUID tarefaId, UUID dayId) {
         User user = userService.getUsuarioAutenticado();
 
         Optional<Tarefa> tarefaOptional = tarefaRepository.findByIdAndUserId(tarefaId, user.getId());
@@ -157,10 +152,10 @@ public class TarefaService {
         if (tarefaOptional.isPresent()) {
             Tarefa tarefa = tarefaOptional.get();
 
-            dayService.removeTaskFromDayAndFutureDays(user.getId(), dayId, tarefa);
+            dayService.deleteTaskFromDayAndFutureDays(user.getId(), dayId, tarefa);
 
-            boolean aindaReferenciada = dayRepository.existsByUserIdAndTarefasPrevistasContaining(user.getId(), tarefa);
-            if (!aindaReferenciada) {
+            boolean stillReferenced = dayRepository.existsByUserIdAndTarefasPrevistasContaining(user.getId(), tarefa);
+            if (!stillReferenced) {
                 tarefaRepository.delete(tarefa);
                 logger.info("Tarefa {} deletada completamente", tarefaId);
             } else {
@@ -174,7 +169,7 @@ public class TarefaService {
     }
 
     @Transactional
-    public void deletarTodasAsTarefas() {
+    public void deleteAllTasks() {
         User user = userService.getUsuarioAutenticado();
         List<Day> dias = dayRepository.findAllByUserId(user.getId());
 
@@ -197,18 +192,26 @@ public class TarefaService {
 
     private boolean shouldCloneTask(Tarefa oldTask, Tarefa newTask) {
         boolean scoreChanged = !Objects.equals(oldTask.getScore(), newTask.getScore());
-        boolean areaChanged = !Objects.equals(oldTask.getArea(), newTask.getArea());
-        boolean subareaChanged = !Objects.equals(oldTask.getSubarea(), newTask.getSubarea());
+
+        UUID oldAreaId = oldTask.getArea() != null ? oldTask.getArea().getId() : null;
+        UUID newAreaId = newTask.getArea() != null ? newTask.getArea().getId() : null;
+        boolean areaChanged = !Objects.equals(oldAreaId, newAreaId);
+
+        UUID oldSubareaId = oldTask.getSubarea() != null ? oldTask.getSubarea().getId() : null;
+        UUID newSubareaId = newTask.getSubarea() != null ? newTask.getSubarea().getId() : null;
+        boolean subareaChanged = !Objects.equals(oldSubareaId, newSubareaId);
+
         boolean titleChanged = hasSignificantTitleChange(oldTask.getTitle(), newTask.getTitle());
 
         logger.info("Verificando necessidade de clonar tarefa:");
         logger.info("- Score alterado? {} ({} → {})", scoreChanged, oldTask.getScore(), newTask.getScore());
-        logger.info("- Área alterada? {} ({} → {})", areaChanged, oldTask.getArea(), newTask.getArea());
-        logger.info("- Subárea alterada? {} ({} → {})", subareaChanged, oldTask.getSubarea(), newTask.getSubarea());
+        logger.info("- Área alterada? {} ({} → {})", areaChanged, oldAreaId, newAreaId);
+        logger.info("- Subárea alterada? {} ({} → {})", subareaChanged, oldSubareaId, newSubareaId);
         logger.info("- Título significativamente alterado? {} ({} → {})", titleChanged, oldTask.getTitle(), newTask.getTitle());
 
         return scoreChanged || areaChanged || subareaChanged || titleChanged;
     }
+
 
     private boolean hasSignificantTitleChange(String oldTitle, String newTitle) {
         if (oldTitle == null || newTitle == null) return true;
@@ -249,19 +252,39 @@ public class TarefaService {
 
         logger.info("Clonando tarefa '{}' para o dia {}", oldTask.getTitle(), dayId);
 
-        dayService.removeTaskFromDayAndFutureDays(user.getId(), dayId, oldTask);
+        oldTask.setLatestVersion(false);
+        tarefaRepository.save(oldTask);
+
+        Tarefa originalTask = (oldTask.getOriginalTask() != null) ? oldTask.getOriginalTask() : oldTask;
+
+        LocalDate cutoffDate = dayRepository.findByIdAndUserId(dayId, user.getId())
+                .orElseThrow(() -> new RuntimeException("Dia com ID " + dayId + " não encontrado."))
+                .getDate();
+
+        List<Tarefa> versoesRemovidas = dayService.removerVersoesFuturasDosDias(originalTask, cutoffDate, user.getId());
+
+        boolean originalVaiSerExcluida = dayService.seraExcluidaSeNaoUsadaAntes(originalTask, cutoffDate, user.getId());
+        logger.info("originalVaiSerExcluida? - '{}'", originalVaiSerExcluida);
 
         Tarefa newTask = new Tarefa();
         BeanUtils.copyProperties(newTaskData, newTask);
         newTask.setId(null);
         newTask.setUser(user);
+        newTask.setCreatedAt(LocalDateTime.now());
+        newTask.setLatestVersion(true);
+
+        if (originalVaiSerExcluida) {
+            newTask.setOriginalTask(null);
+            logger.info("A tarefa original será excluída. Nova tarefa será a raiz da árvore.");
+        } else {
+            newTask.setOriginalTask(originalTask);
+        }
 
         newTask = tarefaRepository.save(newTask);
 
-        Day day = dayRepository.findByIdAndUserId(dayId, user.getId())
-                .orElseThrow(() -> new RuntimeException("Dia com ID " + dayId + " não encontrado."));
+        dayService.addTaskToDayAndFutureDays(newTask, user.getId(), cutoffDate);
+        dayService.excluirVersoesSeNaoUsadasAntes(versoesRemovidas, cutoffDate, user.getId());
 
-        dayService.adicionarTarefaAosDiasFuturos(newTask, day.getDate());
 
         return newTask;
     }
