@@ -13,6 +13,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 public class AuthService implements UserDetailsService {
 
@@ -32,15 +34,16 @@ public class AuthService implements UserDetailsService {
 
     public User registerUser(RegisterDTO registerDTO) {
         String encryptedPassword = new BCryptPasswordEncoder().encode(registerDTO.password());
-        if (userRepository.existsByLogin(registerDTO.login())) {
-            throw new UserAlreadyExistsException(registerDTO.login());
+        if (userRepository.existsByLogin(registerDTO.email())) {
+            throw new UserAlreadyExistsException(registerDTO.email());
         }
 
 
         User user = new User();
-        user.setLogin(registerDTO.login());
+        user.setLogin(registerDTO.email());
         user.setPassword(encryptedPassword);
         user.setRole(registerDTO.role());
+        user.setCreatedAt(LocalDateTime.now());
 
         user = userRepository.save(user);
 

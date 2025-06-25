@@ -12,8 +12,9 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
+                System.out.println("Adicionando mapeamento CORS...");
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:4200", "https://app-habito-list.vercel.app/")
+                        .allowedOrigins("http://localhost:4200", "https://app-habito-list.vercel.app/", "http://localhost:3000")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*");
             }

@@ -5,6 +5,7 @@ import com.matheus.api_abito_arcano.dtos.response.AreaResponseDTO;
 import com.matheus.api_abito_arcano.mappers.AreaMapper;
 import com.matheus.api_abito_arcano.models.Area;
 import com.matheus.api_abito_arcano.services.AreaService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +30,8 @@ public class AreaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AreaResponseDTO>> listarAreas() {
+    public ResponseEntity<List<AreaResponseDTO>> listarAreas(HttpServletRequest request) {
+        System.out.println("Authorization Header: " + request.getHeader("Authorization"));
         List<AreaResponseDTO> areaResponseDTOs = areaService.listarAreas();
         return ResponseEntity.ok(areaResponseDTOs);
     }

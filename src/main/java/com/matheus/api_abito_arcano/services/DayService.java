@@ -84,8 +84,10 @@ public class DayService {
             for (Day d : diasDoUsuario) {
                 d.setCurrent(false);
             }
-            diaAtual.setCurrent(true);
             dayRepository.saveAll(diasDoUsuario);
+
+            diaAtual.setCurrent(true);
+            dayRepository.save(diaAtual);
         }
 
         Day ultimoDia = dayRepository.findTopByUserIdOrderByDateDesc(user.getId());
