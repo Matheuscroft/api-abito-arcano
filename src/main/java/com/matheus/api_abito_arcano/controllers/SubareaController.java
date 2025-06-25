@@ -46,6 +46,7 @@ public class SubareaController {
         return ResponseEntity.ok(subareaResponseDTOs);
     }
 
+
     @GetMapping("/{id}")
     public ResponseEntity<SubareaResponseDTO> buscarPorId(@PathVariable UUID id) {
         Optional<Subarea> subarea = subareaService.buscarPorId(id);
