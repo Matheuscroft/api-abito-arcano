@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public record TarefaDTO (@NotBlank String title,
                          @NotNull int score,
+                         @NotBlank String type,
                          @NotNull List<Integer> daysOfTheWeek,
                          UUID areaId,
                          UUID subareaId

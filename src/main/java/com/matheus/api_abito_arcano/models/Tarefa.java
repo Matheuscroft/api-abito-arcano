@@ -19,6 +19,7 @@ public class Tarefa {
 
     private String title;
     private int score;
+    private String type;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable( name = "days_of_the_week", joinColumns = @JoinColumn(name = "tarefa_id") )
@@ -126,5 +127,13 @@ public class Tarefa {
 
     public void setLatestVersion(boolean latestVersion) {
         this.latestVersion = latestVersion;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

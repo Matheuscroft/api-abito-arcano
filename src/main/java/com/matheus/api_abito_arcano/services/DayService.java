@@ -13,6 +13,8 @@ import com.matheus.api_abito_arcano.repositories.DayRepository;
 import com.matheus.api_abito_arcano.repositories.TarefaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class DayService {
+
+    private static final Logger logger = LoggerFactory.getLogger(TarefaService.class);
 
     @Autowired
     private UserService userService;
@@ -118,19 +122,32 @@ public class DayService {
 
     @Transactional
     public DayDetailResponseDTO buscarPorId(UUID id) {
+        logger.info("[DayService] Buscando dia com ID: {}", id);
         Day day = dayRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Dia não encontrado"));
 
+        logger.info("[DayService] Dia encontrado: {} - {}", day.getDate(), day.getId());
+
+        logger.info("[DayService] Carregando tarefas previstas...");
         day.getTarefasPrevistas().size();
+        logger.info("[DayService] Carregando tarefas concluídas...");
         day.getCompletedTasks().size();
 
         List<TarefaResponseDTO> tarefasDTO = day.getTarefasPrevistas().stream()
                 .map(TarefaResponseDTO::new)
                 .toList();
 
-        List<CompletedTaskResponseDTO> completedTasksDTO = day.getCompletedTasks().stream()
+        /*List<CompletedTaskResponseDTO> completedTasksDTO = day.getCompletedTasks().stream()
                 .map(CompletedTaskResponseDTO::new)
+                .toList();*/
+
+        List<CompletedTaskResponseDTO> completedTasksDTO = day.getCompletedTasks().stream()
+                .map(c -> {
+                    logger.info("[DayService] Tarefa concluída: {} em {}", c.getTarefa().getTitle(), c.getCompletedAt());
+                    return new CompletedTaskResponseDTO(c);
+                })
                 .toList();
+        logger.info("[DayService] Respondendo dia com {} previstas e {} concluídas", tarefasDTO.size(), completedTasksDTO.size());
 
         return new DayDetailResponseDTO(
                 day.getId(),

@@ -23,6 +23,10 @@ public class CompletedTask {
     @JoinColumn(name = "tarefa_id", referencedColumnName = "id")
     private Tarefa tarefa;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
+
     private LocalDate completedAt;
 
     private int score;
@@ -50,5 +54,29 @@ public class CompletedTask {
 
     public void setTarefa(Tarefa tarefa) {
         this.tarefa = tarefa;
+    }
+
+    public Day getDay() {
+        return day;
+    }
+
+    public void setDay(Day day) {
+        this.day = day;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
     }
 }

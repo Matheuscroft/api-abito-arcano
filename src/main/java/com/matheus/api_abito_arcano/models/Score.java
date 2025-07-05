@@ -32,4 +32,52 @@ public class Score {
     private User user;
 
     private int score;
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public Day getDay() {
+        return day;
+    }
+
+    public void setDay(Day day) {
+        this.day = day;
+    }
+
+    public Area getArea() {
+        return area;
+    }
+
+    public void setArea(Area area) {
+        this.area = area;
+    }
+
+    public Subarea getSubarea() {
+        return subarea;
+    }
+
+    public void setSubarea(Subarea subarea) {
+        this.subarea = subarea;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
 }
