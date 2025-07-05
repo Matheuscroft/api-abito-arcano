@@ -12,7 +12,7 @@ public record CompletedTaskResponseDTO(
         UUID tarefaId,
         String title,
         LocalDateTime createdAt,
-        LocalDate completedAt,
+        LocalDateTime completedAt,
         int score,
         UUID areaId,
         UUID subareaId,

@@ -122,32 +122,19 @@ public class DayService {
 
     @Transactional
     public DayDetailResponseDTO buscarPorId(UUID id) {
-        logger.info("[DayService] Buscando dia com ID: {}", id);
         Day day = dayRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Dia não encontrado"));
 
-        logger.info("[DayService] Dia encontrado: {} - {}", day.getDate(), day.getId());
-
-        logger.info("[DayService] Carregando tarefas previstas...");
         day.getTarefasPrevistas().size();
-        logger.info("[DayService] Carregando tarefas concluídas...");
         day.getCompletedTasks().size();
 
         List<TarefaResponseDTO> tarefasDTO = day.getTarefasPrevistas().stream()
                 .map(TarefaResponseDTO::new)
                 .toList();
 
-        /*List<CompletedTaskResponseDTO> completedTasksDTO = day.getCompletedTasks().stream()
-                .map(CompletedTaskResponseDTO::new)
-                .toList();*/
-
         List<CompletedTaskResponseDTO> completedTasksDTO = day.getCompletedTasks().stream()
-                .map(c -> {
-                    logger.info("[DayService] Tarefa concluída: {} em {}", c.getTarefa().getTitle(), c.getCompletedAt());
-                    return new CompletedTaskResponseDTO(c);
-                })
+                .map(CompletedTaskResponseDTO::new)
                 .toList();
-        logger.info("[DayService] Respondendo dia com {} previstas e {} concluídas", tarefasDTO.size(), completedTasksDTO.size());
 
         return new DayDetailResponseDTO(
                 day.getId(),

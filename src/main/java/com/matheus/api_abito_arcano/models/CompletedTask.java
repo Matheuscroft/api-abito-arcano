@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -27,16 +28,16 @@ public class CompletedTask {
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
-    private LocalDate completedAt;
+    private LocalDateTime completedAt;
 
     private int score;
 
 
-    public LocalDate getCompletedAt() {
+    public LocalDateTime getCompletedAt() {
         return completedAt;
     }
 
-    public void setCompletedAt(LocalDate completedAt) {
+    public void setCompletedAt(LocalDateTime completedAt) {
         this.completedAt = completedAt;
     }
 

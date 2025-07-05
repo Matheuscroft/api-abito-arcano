@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -48,7 +49,7 @@ public class CompletedTaskService {
         completed.setTarefa(tarefa);
         completed.setDay(day);
         completed.setUser(user);
-        completed.setCompletedAt(LocalDate.now());
+        completed.setCompletedAt(LocalDateTime.now());
         completed.setScore(tarefa.getScore());
 
         log.info("[checkTarefa] Salvando CompletedTask...");
@@ -86,7 +87,7 @@ public class CompletedTaskService {
                 .orElseThrow();
 
         UUID completedId = completed.getId();
-        LocalDate completedAt = completed.getCompletedAt();
+        LocalDateTime completedAt = completed.getCompletedAt();
 
         completedTaskRepository.delete(completed);
 
