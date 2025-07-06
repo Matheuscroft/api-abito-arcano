@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -80,8 +81,8 @@ public class DayService {
     }
 
     public void verificarDiaAtualEDados(User user) {
-        LocalDate hoje = LocalDate.now();
-
+        //LocalDate hoje = LocalDate.now();
+        LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
         Day diaAtual = dayRepository.findByUserIdAndDate(user.getId(), hoje);
         if (diaAtual != null && !diaAtual.isCurrent()) {
             List<Day> diasDoUsuario = dayRepository.findByUserId(user.getId());
