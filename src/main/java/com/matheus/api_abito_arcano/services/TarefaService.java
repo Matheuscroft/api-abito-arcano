@@ -5,10 +5,7 @@ import com.matheus.api_abito_arcano.dtos.TarefaDTO;
 import com.matheus.api_abito_arcano.dtos.response.TarefaResponseDTO;
 import com.matheus.api_abito_arcano.exceptions.*;
 import com.matheus.api_abito_arcano.models.*;
-import com.matheus.api_abito_arcano.repositories.AreaRepository;
-import com.matheus.api_abito_arcano.repositories.DayRepository;
-import com.matheus.api_abito_arcano.repositories.SubareaRepository;
-import com.matheus.api_abito_arcano.repositories.TarefaRepository;
+import com.matheus.api_abito_arcano.repositories.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -43,6 +40,9 @@ public class TarefaService {
 
     @Autowired
     private SubareaService subareaService;
+
+    @Autowired
+    private CompletedTaskRepository completedTaskRepository;
 
     public Tarefa createTask(TarefaDTO tarefaDto, UUID dayId) {
 
@@ -152,13 +152,32 @@ public class TarefaService {
         if (tarefaOptional.isPresent()) {
             Tarefa tarefa = tarefaOptional.get();
 
+            Day fromDay = dayRepository.findByIdAndUserId(dayId, user.getId())
+                    .orElseThrow(() -> new DayNotFoundException(dayId));
+
+            List<CompletedTask> futureCompletions = completedTaskRepository
+                    .findAllByTarefa_IdAndDay_DateGreaterThanEqual(tarefa.getId(), fromDay.getDate());
+
+            if (!futureCompletions.isEmpty()) {
+                logger.info("Deletando {} completedTasks futuras da tarefa {}", futureCompletions.size(), tarefa.getId());
+                completedTaskRepository.deleteAll(futureCompletions);
+            }
+
+
+
             dayService.deleteTaskFromDayAndFutureDays(user.getId(), dayId, tarefa);
 
-            boolean stillReferenced = dayRepository.existsByUserIdAndTarefasPrevistasContaining(user.getId(), tarefa);
-            if (!stillReferenced) {
+            boolean stillReferenced = dayRepository
+                    .existsByUserIdAndTarefasPrevistasContaining(user.getId(), tarefa);
+
+            boolean hasRemainingCompletions = completedTaskRepository
+                    .existsByTarefa_Id(tarefa.getId());
+
+            if (!stillReferenced && !hasRemainingCompletions) {
                 tarefaRepository.delete(tarefa);
-                logger.info("Tarefa {} deletada completamente", tarefaId);
-            } else {
+                logger.info("Tarefa {} deletada completamente", tarefa.getId());
+            }
+            else {
                 logger.info("Tarefa {} ainda presente em algum dia, não foi deletada do banco", tarefaId);
             }
 

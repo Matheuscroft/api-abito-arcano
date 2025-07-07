@@ -31,6 +31,10 @@ public interface DayRepository extends JpaRepository<Day, UUID> {
     @Query("SELECT d FROM Day d LEFT JOIN FETCH d.tarefasPrevistas WHERE d.user.id = :userId AND d.date >= :data")
     List<Day> findAllByUserIdAndDateGreaterThanEqualWithTarefas(@Param("userId") UUID userId, @Param("data") LocalDate data);
 
+    @Query("SELECT d FROM Day d LEFT JOIN FETCH d.completedTasks WHERE d.user.id = :userId AND d.date >= :data")
+    List<Day> findAllByUserIdAndDateGreaterThanEqualWithCompletedTasks(@Param("userId") UUID userId, @Param("data") LocalDate data);
+
+
     Optional<Day> findByIdAndUserId(UUID id, UUID userId);
 
     boolean existsByUserIdAndTarefasPrevistasContaining(UUID userId, Tarefa tarefa);

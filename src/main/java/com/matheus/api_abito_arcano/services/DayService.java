@@ -192,11 +192,23 @@ public class DayService {
         List<Day> dias = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(
                 userId, fromDay.getDate());
 
+        List<Day> diasCompletedTasks = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithCompletedTasks(
+                userId, fromDay.getDate());
+
         for (Day dia : dias) {
             dia.getTarefasPrevistas().removeIf(t -> t.getId().equals(tarefa.getId()));
         }
 
-        dayRepository.saveAll(dias);
+        for (Day dia : diasCompletedTasks) {
+            dia.getCompletedTasks().removeIf(ct -> ct.getTarefa().getId().equals(tarefa.getId()));
+        }
+
+        Set<Day> todosDias = new HashSet<>();
+        todosDias.addAll(dias);
+        todosDias.addAll(diasCompletedTasks);
+
+        dayRepository.saveAll(todosDias);
+
     }
 
 

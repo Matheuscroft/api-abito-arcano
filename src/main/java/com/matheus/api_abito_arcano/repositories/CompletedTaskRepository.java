@@ -18,4 +18,9 @@ public interface CompletedTaskRepository extends JpaRepository<CompletedTask, UU
 
     Optional<CompletedTask> findByTarefa_IdAndDay_Id(UUID tarefaId, UUID dayId);
 
+    List<CompletedTask> findAllByTarefa_IdAndDay_DateGreaterThanEqual(UUID tarefaId, LocalDate date);
+
+    boolean existsByTarefa_Id(UUID tarefaId);
+
+
 }
