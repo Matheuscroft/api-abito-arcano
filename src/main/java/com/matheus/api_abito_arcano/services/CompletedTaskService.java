@@ -1,6 +1,9 @@
 package com.matheus.api_abito_arcano.services;
 
+import com.matheus.api_abito_arcano.dtos.response.CheckTarefaResponseDTO;
+import com.matheus.api_abito_arcano.dtos.response.CompletedTaskResponseDTO;
 import com.matheus.api_abito_arcano.dtos.response.CompletedTaskWithScoreDTO;
+import com.matheus.api_abito_arcano.dtos.response.UncheckTarefaResponseDTO;
 import com.matheus.api_abito_arcano.models.CompletedTask;
 import com.matheus.api_abito_arcano.models.Day;
 import com.matheus.api_abito_arcano.models.Tarefa;
@@ -34,7 +37,7 @@ public class CompletedTaskService {
     private ScoreService scoreService;
 
     @Transactional
-    public CompletedTaskWithScoreDTO checkTarefa(UUID tarefaId, UUID dayId) {
+    public CheckTarefaResponseDTO checkTarefa(UUID tarefaId, UUID dayId) {
         log.info("[checkTarefa] Iniciando check da tarefa {} para o dia {}", tarefaId, dayId);
 
         User user = userService.getUsuarioAutenticado();
@@ -62,22 +65,14 @@ public class CompletedTaskService {
         var score = scoreService.processarPontuacao(tarefaId, dayId, true, user);
         log.info("[checkTarefa] Score atualizado: {}", score.score());
 
-        return new CompletedTaskWithScoreDTO(
-                saved.getId(),
-                tarefaId,
-                saved.getCompletedAt(),
-                score.scoreId(),
-                score.areaId(),
-                score.areaName(),
-                score.subareaId(),
-                score.subareaName(),
-                score.date(),
-                score.score()
+        return new CheckTarefaResponseDTO(
+                new CompletedTaskResponseDTO(saved),
+                score
         );
     }
 
     @Transactional
-    public CompletedTaskWithScoreDTO uncheckTarefa(UUID tarefaId, UUID dayId) {
+    public UncheckTarefaResponseDTO uncheckTarefa(UUID tarefaId, UUID dayId) {
         User user = userService.getUsuarioAutenticado();
 
         CompletedTask completed = completedTaskRepository
@@ -89,22 +84,12 @@ public class CompletedTaskService {
         UUID completedId = completed.getId();
         LocalDateTime completedAt = completed.getCompletedAt();
 
+        CompletedTaskResponseDTO dto = new CompletedTaskResponseDTO(completed);
         completedTaskRepository.delete(completed);
 
         var score = scoreService.processarPontuacao(tarefaId, dayId, false, user);
 
-        return new CompletedTaskWithScoreDTO(
-                completedId,
-                tarefaId,
-                completedAt,
-                score.scoreId(),
-                score.areaId(),
-                score.areaName(),
-                score.subareaId(),
-                score.subareaName(),
-                score.date(),
-                score.score()
-        );
+        return new UncheckTarefaResponseDTO(dto, score);
     }
 
 }

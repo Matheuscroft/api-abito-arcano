@@ -76,7 +76,7 @@ public class DayService {
 
         return dias.stream()
                 .map(DayMapper::toDTO)
-                .sorted(Comparator.comparing(DayResponseDTO::date)) // opcional
+                .sorted(Comparator.comparing(DayResponseDTO::date))
                 .toList();
     }
 
