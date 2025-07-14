@@ -188,27 +188,34 @@ public class DayService {
     public void deleteTaskFromDayAndFutureDays(UUID userId, UUID dayId, Tarefa tarefa) {
         Day fromDay = dayRepository.findByIdAndUserId(dayId, userId)
                 .orElseThrow(() -> new DayNotFoundException(dayId));
-
+        logger.info("Passou pelo fromDay {} com userId {} e dayId {}", fromDay, userId, dayId);
         List<Day> dias = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(
                 userId, fromDay.getDate());
-
+        logger.info("Passou pelo dias");
         List<Day> diasCompletedTasks = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithCompletedTasks(
                 userId, fromDay.getDate());
-
+        logger.info("Passou pelo diasCompletedTasks");
         for (Day dia : dias) {
             dia.getTarefasPrevistas().removeIf(t -> t.getId().equals(tarefa.getId()));
         }
 
+        logger.info("Passou pelo for 1");
+
         for (Day dia : diasCompletedTasks) {
             dia.getCompletedTasks().removeIf(ct -> ct.getTarefa().getId().equals(tarefa.getId()));
         }
+        logger.info("Passou pelo for 2");
 
         Set<Day> todosDias = new HashSet<>();
+        logger.info("Passou pelo todosDias");
         todosDias.addAll(dias);
         todosDias.addAll(diasCompletedTasks);
+        logger.info("Passou pelo addAll");
 
         if (!todosDias.isEmpty()) {
+            logger.info("Entrou no isempty");
             dayRepository.saveAll(todosDias);
+            logger.info("Passou pelo saveAll");
         }
 
     }
