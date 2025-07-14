@@ -207,7 +207,9 @@ public class DayService {
         todosDias.addAll(dias);
         todosDias.addAll(diasCompletedTasks);
 
-        dayRepository.saveAll(todosDias);
+        if (!todosDias.isEmpty()) {
+            dayRepository.saveAll(todosDias);
+        }
 
     }
 

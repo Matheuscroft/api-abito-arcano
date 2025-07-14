@@ -146,10 +146,12 @@ public class TarefaService {
 
     public boolean deleteTask(UUID tarefaId, UUID dayId) {
         User user = userService.getUsuarioAutenticado();
+        logger.info("Deletando tarefa de id {} ", tarefaId);
 
         Optional<Tarefa> tarefaOptional = tarefaRepository.findByIdAndUserId(tarefaId, user.getId());
 
         if (tarefaOptional.isPresent()) {
+            logger.info("Tarefa optional is present");
             Tarefa tarefa = tarefaOptional.get();
 
             Day fromDay = dayRepository.findByIdAndUserId(dayId, user.getId())
