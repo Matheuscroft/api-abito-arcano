@@ -163,11 +163,13 @@ public class TarefaService {
             if (!futureCompletions.isEmpty()) {
                 logger.info("Deletando {} completedTasks futuras da tarefa {}", futureCompletions.size(), tarefa.getId());
                 completedTaskRepository.deleteAll(futureCompletions);
+                logger.info("Passou pelo deleteAll");
             }
 
 
 
             dayService.deleteTaskFromDayAndFutureDays(user.getId(), dayId, tarefa);
+            logger.info("Passou pelo dayservice deleteTaskFromDayAndFutureDays");
 
             boolean stillReferenced = dayRepository
                     .existsByUserIdAndTarefasPrevistasContaining(user.getId(), tarefa);
@@ -175,7 +177,11 @@ public class TarefaService {
             boolean hasRemainingCompletions = completedTaskRepository
                     .existsByTarefa_Id(tarefa.getId());
 
+            logger.info("Passou pelo stillReferenced {}", stillReferenced);
+            logger.info("Passou pelo hasRemainingCompletions {}", hasRemainingCompletions);
+
             if (!stillReferenced && !hasRemainingCompletions) {
+                logger.info("Passou pelo if");
                 tarefaRepository.delete(tarefa);
                 logger.info("Tarefa {} deletada completamente", tarefa.getId());
             }
