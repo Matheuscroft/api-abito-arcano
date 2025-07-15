@@ -2,6 +2,8 @@ package com.matheus.api_abito_arcano.repositories;
 
 import com.matheus.api_abito_arcano.models.CompletedTask;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,6 +23,9 @@ public interface CompletedTaskRepository extends JpaRepository<CompletedTask, UU
     List<CompletedTask> findAllByTarefa_IdAndDay_DateGreaterThanEqual(UUID tarefaId, LocalDate date);
 
     boolean existsByTarefa_Id(UUID tarefaId);
+
+    @Query("SELECT ct FROM CompletedTask ct JOIN ct.day d WHERE ct.tarefa.id = :tarefaId AND d.date >= :date")
+    List<CompletedTask> findAllByTarefaIdAndFromDate(@Param("tarefaId") UUID tarefaId, @Param("date") LocalDate date);
 
 
 }
