@@ -188,37 +188,47 @@ public class DayService {
     public void deleteTaskFromDayAndFutureDays(UUID userId, UUID dayId, Tarefa tarefa) {
         Day fromDay = dayRepository.findByIdAndUserId(dayId, userId)
                 .orElseThrow(() -> new DayNotFoundException(dayId));
-        logger.info("Passou pelo fromDay {} com userId {} e dayId {}", fromDay, userId, dayId);
-        List<Day> dias = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(
-                userId, fromDay.getDate());
-        logger.info("Passou pelo dias");
-        List<Day> diasCompletedTasks = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithCompletedTasks(
-                userId, fromDay.getDate());
-        logger.info("Passou pelo diasCompletedTasks");
-        for (Day dia : dias) {
-            dia.getTarefasPrevistas().removeIf(t -> t.getId().equals(tarefa.getId()));
+
+        logger.info("[deleteTaskFromDayAndFutureDays] fromDay: id={}, date={}", fromDay.getId(), fromDay.getDate());
+
+        List<Day> diasComTarefas = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(userId, fromDay.getDate());
+        logger.info("[deleteTaskFromDayAndFutureDays] Total dias com tarefas: {}", diasComTarefas.size());
+
+        List<Day> diasComCompleted = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithCompletedTasks(userId, fromDay.getDate());
+        logger.info("[deleteTaskFromDayAndFutureDays] Total dias com completedTasks: {}", diasComCompleted.size());
+
+        // Map para garantir que não haja duplicatas
+        Map<UUID, Day> diasMap = new LinkedHashMap<>();
+
+        // Remove tarefas previstas
+        for (Day dia : diasComTarefas) {
+            boolean removed = dia.getTarefasPrevistas().removeIf(t -> t.getId().equals(tarefa.getId()));
+            if (removed) {
+                logger.info("Dia {} ({}) - tarefa removida de tarefasPrevistas", dia.getId(), dia.getDate());
+            }
+            diasMap.put(dia.getId(), dia);
         }
 
-        logger.info("Passou pelo for 1");
-
-        for (Day dia : diasCompletedTasks) {
-            dia.getCompletedTasks().removeIf(ct -> ct.getTarefa().getId().equals(tarefa.getId()));
-        }
-        logger.info("Passou pelo for 2");
-
-        Set<Day> todosDias = new HashSet<>();
-        logger.info("Passou pelo todosDias");
-        todosDias.addAll(dias);
-        todosDias.addAll(diasCompletedTasks);
-        logger.info("Passou pelo addAll");
-
-        if (!todosDias.isEmpty()) {
-            logger.info("Entrou no isempty");
-            dayRepository.saveAll(todosDias);
-            logger.info("Passou pelo saveAll");
+        // Remove completedTasks
+        for (Day dia : diasComCompleted) {
+            boolean removed = dia.getCompletedTasks().removeIf(ct -> ct.getTarefa().getId().equals(tarefa.getId()));
+            if (removed) {
+                logger.info("Dia {} ({}) - tarefa removida de completedTasks", dia.getId(), dia.getDate());
+            }
+            diasMap.put(dia.getId(), dia);
         }
 
+        List<Day> diasParaSalvar = new ArrayList<>(diasMap.values());
+
+        if (!diasParaSalvar.isEmpty()) {
+            logger.info("Salvando {} dias modificados no total", diasParaSalvar.size());
+            dayRepository.saveAll(diasParaSalvar);
+            logger.info("Todos os dias foram salvos com sucesso");
+        } else {
+            logger.info("Nenhum dia foi modificado, nada foi salvo");
+        }
     }
+
 
 
 
