@@ -44,6 +44,9 @@ public class TarefaService {
     @Autowired
     private CompletedTaskRepository completedTaskRepository;
 
+    @Autowired
+    private CompletedTaskService completedTaskService;
+
     public Tarefa createTask(TarefaDTO tarefaDto, UUID dayId) {
 
         User user = userService.getUsuarioAutenticado();
@@ -159,25 +162,14 @@ public class TarefaService {
 
         Day fromDay = dayRepository.findByIdAndUserId(dayId, user.getId())
                 .orElseThrow(() -> new DayNotFoundException(dayId));
-        logger.info("[deleteTask] fromDay id={}, date={}", fromDay.getId(), fromDay.getDate());
+        LocalDate fromDate = fromDay.getDate();
 
-        List<CompletedTask> futureCompletions = completedTaskRepository
-                .findAllByTarefaIdAndFromDate(tarefa.getId(), fromDay.getDate());
+        logger.info("[deleteTask] fromDay id={}, date={}", fromDay.getId(), fromDate);
 
-        logger.info("[deleteTask] CompletedTasks encontradas: {}", futureCompletions.size());
-        for (CompletedTask ct : futureCompletions) {
-            logger.info(" - CompletedTask id={} | day.id={} | tarefa.id={}", ct.getId(), ct.getDay().getId(), ct.getTarefa().getId());
-        }
+        dayService.deleteTaskFromDaysAndFromDate(user.getId(), fromDate, tarefa);
+        completedTaskService.deleteCompletedTasksFromDate(tarefa.getId(), fromDate);
 
-        if (!futureCompletions.isEmpty()) {
-            completedTaskRepository.deleteAll(futureCompletions);
-            logger.info("[deleteTask] Deleted {} completedTasks", futureCompletions.size());
-        } else {
-            logger.info("[deleteTask] Nenhuma completedTask a excluir");
-        }
-
-        dayService.deleteTaskFromDayAndFutureDays(user.getId(), dayId, tarefa);
-        logger.info("[deleteTask] Concluído: deleteTaskFromDayAndFutureDays");
+        logger.info("[deleteTask] Concluído: deleteTaskFromDaysAndFromDate e deleteCompletedTasksFromDate");
 
         boolean stillReferenced = dayRepository.existsByUserIdAndTarefasPrevistasContaining(user.getId(), tarefa);
         boolean hasRemainingCompletions = completedTaskRepository.existsByTarefa_Id(tarefa.getId());

@@ -19,12 +19,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
 public class CompletedTaskService {
 
-    private static final Logger log = LoggerFactory.getLogger(CompletedTaskService.class);
+    private static final Logger logger = LoggerFactory.getLogger(TarefaService.class);
     @Autowired
     private CompletedTaskRepository completedTaskRepository;
     @Autowired
@@ -38,15 +39,15 @@ public class CompletedTaskService {
 
     @Transactional
     public CheckTarefaResponseDTO checkTarefa(UUID tarefaId, UUID dayId) {
-        log.info("[checkTarefa] Iniciando check da tarefa {} para o dia {}", tarefaId, dayId);
+        logger.info("[checkTarefa] Iniciando check da tarefa {} para o dia {}", tarefaId, dayId);
 
         User user = userService.getUsuarioAutenticado();
-        log.info("[checkTarefa] Usuário autenticado: {}", user.getId());
+        logger.info("[checkTarefa] Usuário autenticado: {}", user.getId());
 
         Tarefa tarefa = tarefaRepository.findById(tarefaId).orElseThrow();
         Day day = dayRepository.findById(dayId).orElseThrow();
 
-        log.info("[checkTarefa] Tarefa: {}, Dia: {}", tarefa.getTitle(), day.getDate());
+        logger.info("[checkTarefa] Tarefa: {}, Dia: {}", tarefa.getTitle(), day.getDate());
 
         CompletedTask completed = new CompletedTask();
         completed.setTarefa(tarefa);
@@ -55,15 +56,15 @@ public class CompletedTaskService {
         completed.setCompletedAt(LocalDateTime.now());
         completed.setScore(tarefa.getScore());
 
-        log.info("[checkTarefa] Salvando CompletedTask...");
+        logger.info("[checkTarefa] Salvando CompletedTask...");
         CompletedTask saved = completedTaskRepository.save(completed);
-        log.info("[checkTarefa] CompletedTask salvo com ID {}", saved.getId());
+        logger.info("[checkTarefa] CompletedTask salvo com ID {}", saved.getId());
 
         day.getCompletedTasks().add(saved);
         dayRepository.save(day);
 
         var score = scoreService.processarPontuacao(tarefaId, dayId, true, user);
-        log.info("[checkTarefa] Score atualizado: {}", score.score());
+        logger.info("[checkTarefa] Score atualizado: {}", score.score());
 
         return new CheckTarefaResponseDTO(
                 new CompletedTaskResponseDTO(saved),
@@ -91,5 +92,25 @@ public class CompletedTaskService {
 
         return new UncheckTarefaResponseDTO(dto, score);
     }
+
+    public void deleteCompletedTasksFromDate(UUID tarefaId, LocalDate fromDate) {
+
+        List<CompletedTask> completions = completedTaskRepository
+                .findAllByTarefaIdAndFromDate(tarefaId, fromDate);
+
+        logger.info("[deleteFutureCompletionsFromDate] Encontradas {} completedTasks para exclusão", completions.size());
+
+        for (CompletedTask ct : completions) {
+            logger.info(" - CompletedTask id={} | day.id={} | data={}", ct.getId(), ct.getDay().getId(), ct.getDay().getDate());
+        }
+
+        if (!completions.isEmpty()) {
+            completedTaskRepository.deleteAll(completions);
+            logger.info("[deleteFutureCompletionsFromDate] CompletedTasks excluídas com sucesso");
+        } else {
+            logger.info("[deleteFutureCompletionsFromDate] Nenhuma completedTask a excluir");
+        }
+    }
+
 
 }

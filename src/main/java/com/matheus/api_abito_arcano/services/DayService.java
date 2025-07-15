@@ -185,15 +185,11 @@ public class DayService {
     }
 
 
-    public void deleteTaskFromDayAndFutureDays(UUID userId, UUID dayId, Tarefa tarefa) {
-        Day fromDay = dayRepository.findByIdAndUserId(dayId, userId)
-                .orElseThrow(() -> new DayNotFoundException(dayId));
+    public void deleteTaskFromDaysAndFromDate(UUID userId, LocalDate fromDate, Tarefa tarefa) {
 
-        logger.info("[deleteTaskFromDayAndFutureDays] fromDay: id={}, date={}", fromDay.getId(), fromDay.getDate());
-
-        List<Day> diasComTarefa = dayRepository.findAllByUserIdAndTarefaWithTarefasFromDate(userId, tarefa, fromDay.getDate());
+        List<Day> diasComTarefa = dayRepository.findAllByUserIdAndTarefaWithTarefasFromDate(userId, tarefa, fromDate);
         logger.info("[deleteTaskFromDayAndFutureDays] Dias que contêm a tarefa {} a partir de {}: {}",
-                tarefa.getId(), fromDay.getDate(), diasComTarefa.size());
+                tarefa.getId(), fromDate, diasComTarefa.size());
 
         // Remove tarefa prevista
         for (Day dia : diasComTarefa) {
