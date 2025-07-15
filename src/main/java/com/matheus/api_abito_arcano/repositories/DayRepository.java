@@ -28,10 +28,10 @@ public interface DayRepository extends JpaRepository<Day, UUID> {
 """)
     Optional<Day> findByIdWithTarefasAndCompletedTasks(@Param("dayId") UUID dayId);
 
-    @Query("SELECT d FROM Day d LEFT JOIN FETCH d.tarefasPrevistas WHERE d.user.id = :userId AND d.date >= :data")
+    @Query("SELECT d FROM Day d LEFT JOIN FETCH d.tarefasPrevistas WHERE d.user.id = :userId AND d.date >= :data ORDER BY d.date")
     List<Day> findAllByUserIdAndDateGreaterThanEqualWithTarefas(@Param("userId") UUID userId, @Param("data") LocalDate data);
 
-    @Query("SELECT d FROM Day d LEFT JOIN FETCH d.completedTasks WHERE d.user.id = :userId AND d.date >= :data")
+    @Query("SELECT d FROM Day d LEFT JOIN FETCH d.completedTasks WHERE d.user.id = :userId AND d.date >= :data ORDER BY d.date")
     List<Day> findAllByUserIdAndDateGreaterThanEqualWithCompletedTasks(@Param("userId") UUID userId, @Param("data") LocalDate data);
 
 
@@ -46,6 +46,22 @@ public interface DayRepository extends JpaRepository<Day, UUID> {
 
     @Query("SELECT d FROM Day d LEFT JOIN FETCH d.tarefasPrevistas WHERE d.user.id = :userId AND d.date < :cutoffDate")
     List<Day> findAllByUserIdAndDateLessThanWithTarefas(@Param("userId") UUID userId, @Param("cutoffDate") LocalDate cutoffDate);
+
+    @Query("""
+    SELECT DISTINCT d FROM Day d 
+    LEFT JOIN FETCH d.tarefasPrevistas 
+    WHERE d.user.id = :userId 
+      AND :tarefa MEMBER OF d.tarefasPrevistas 
+      AND d.date >= :data
+""")
+    List<Day> findAllByUserIdAndTarefaWithTarefasFromDate(
+            @Param("userId") UUID userId,
+            @Param("tarefa") Tarefa tarefa,
+            @Param("data") LocalDate data
+    );
+
+
+
 
 
 }

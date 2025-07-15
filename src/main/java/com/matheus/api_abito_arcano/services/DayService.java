@@ -191,42 +191,26 @@ public class DayService {
 
         logger.info("[deleteTaskFromDayAndFutureDays] fromDay: id={}, date={}", fromDay.getId(), fromDay.getDate());
 
-        List<Day> diasComTarefas = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(userId, fromDay.getDate());
-        logger.info("[deleteTaskFromDayAndFutureDays] Total dias com tarefas: {}", diasComTarefas.size());
+        List<Day> diasComTarefa = dayRepository.findAllByUserIdAndTarefaWithTarefasFromDate(userId, tarefa, fromDay.getDate());
+        logger.info("[deleteTaskFromDayAndFutureDays] Dias que contêm a tarefa {} a partir de {}: {}",
+                tarefa.getId(), fromDay.getDate(), diasComTarefa.size());
 
-        List<Day> diasComCompleted = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithCompletedTasks(userId, fromDay.getDate());
-        logger.info("[deleteTaskFromDayAndFutureDays] Total dias com completedTasks: {}", diasComCompleted.size());
-
-        // Map para garantir que não haja duplicatas
-        Map<UUID, Day> diasMap = new LinkedHashMap<>();
-
-        // Remove tarefas previstas
-        for (Day dia : diasComTarefas) {
+        // Remove tarefa prevista
+        for (Day dia : diasComTarefa) {
             boolean removed = dia.getTarefasPrevistas().removeIf(t -> t.getId().equals(tarefa.getId()));
             if (removed) {
                 logger.info("Dia {} ({}) - tarefa removida de tarefasPrevistas", dia.getId(), dia.getDate());
             }
-            diasMap.put(dia.getId(), dia);
         }
 
-        // Remove completedTasks
-        for (Day dia : diasComCompleted) {
-            boolean removed = dia.getCompletedTasks().removeIf(ct -> ct.getTarefa().getId().equals(tarefa.getId()));
-            if (removed) {
-                logger.info("Dia {} ({}) - tarefa removida de completedTasks", dia.getId(), dia.getDate());
-            }
-            diasMap.put(dia.getId(), dia);
-        }
-
-        List<Day> diasParaSalvar = new ArrayList<>(diasMap.values());
-
-        if (!diasParaSalvar.isEmpty()) {
-            logger.info("Salvando {} dias modificados no total", diasParaSalvar.size());
-            dayRepository.saveAll(diasParaSalvar);
+        if (!diasComTarefa.isEmpty()) {
+            logger.info("Salvando {} dias modificados no total", diasComTarefa.size());
+            dayRepository.saveAll(diasComTarefa);
             logger.info("Todos os dias foram salvos com sucesso");
         } else {
             logger.info("Nenhum dia foi modificado, nada foi salvo");
         }
+
     }
 
 

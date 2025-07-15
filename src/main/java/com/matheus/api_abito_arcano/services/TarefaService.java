@@ -146,53 +146,53 @@ public class TarefaService {
 
     public boolean deleteTask(UUID tarefaId, UUID dayId) {
         User user = userService.getUsuarioAutenticado();
-        logger.info("Deletando tarefa de id {} ", tarefaId);
+        logger.info("[deleteTask] Iniciando exclusão da tarefa {} para o usuário {}", tarefaId, user.getId());
 
         Optional<Tarefa> tarefaOptional = tarefaRepository.findByIdAndUserId(tarefaId, user.getId());
 
-        if (tarefaOptional.isPresent()) {
-            logger.info("Tarefa optional is present");
-            Tarefa tarefa = tarefaOptional.get();
-
-            Day fromDay = dayRepository.findByIdAndUserId(dayId, user.getId())
-                    .orElseThrow(() -> new DayNotFoundException(dayId));
-
-            List<CompletedTask> futureCompletions = completedTaskRepository
-                    .findAllByTarefa_IdAndDay_DateGreaterThanEqual(tarefa.getId(), fromDay.getDate());
-
-            if (!futureCompletions.isEmpty()) {
-                logger.info("Deletando {} completedTasks futuras da tarefa {}", futureCompletions.size(), tarefa.getId());
-                completedTaskRepository.deleteAll(futureCompletions);
-                logger.info("Passou pelo deleteAll");
-            }
-
-
-
-            dayService.deleteTaskFromDayAndFutureDays(user.getId(), dayId, tarefa);
-            logger.info("Passou pelo dayservice deleteTaskFromDayAndFutureDays");
-
-            boolean stillReferenced = dayRepository
-                    .existsByUserIdAndTarefasPrevistasContaining(user.getId(), tarefa);
-
-            boolean hasRemainingCompletions = completedTaskRepository
-                    .existsByTarefa_Id(tarefa.getId());
-
-            logger.info("Passou pelo stillReferenced {}", stillReferenced);
-            logger.info("Passou pelo hasRemainingCompletions {}", hasRemainingCompletions);
-
-            if (!stillReferenced && !hasRemainingCompletions) {
-                logger.info("Passou pelo if");
-                tarefaRepository.delete(tarefa);
-                logger.info("Tarefa {} deletada completamente", tarefa.getId());
-            }
-            else {
-                logger.info("Tarefa {} ainda presente em algum dia, não foi deletada do banco", tarefaId);
-            }
-
-            return true;
+        if (tarefaOptional.isEmpty()) {
+            logger.warn("[deleteTask] Tarefa {} não encontrada para o usuário {}", tarefaId, user.getId());
+            return false;
         }
 
-        return false;
+        Tarefa tarefa = tarefaOptional.get();
+
+        Day fromDay = dayRepository.findByIdAndUserId(dayId, user.getId())
+                .orElseThrow(() -> new DayNotFoundException(dayId));
+        logger.info("[deleteTask] fromDay id={}, date={}", fromDay.getId(), fromDay.getDate());
+
+        List<CompletedTask> futureCompletions = completedTaskRepository
+                .findAllByTarefaIdAndFromDate(tarefa.getId(), fromDay.getDate());
+
+        logger.info("[deleteTask] CompletedTasks encontradas: {}", futureCompletions.size());
+        for (CompletedTask ct : futureCompletions) {
+            logger.info(" - CompletedTask id={} | day.id={} | tarefa.id={}", ct.getId(), ct.getDay().getId(), ct.getTarefa().getId());
+        }
+
+        if (!futureCompletions.isEmpty()) {
+            completedTaskRepository.deleteAll(futureCompletions);
+            logger.info("[deleteTask] Deleted {} completedTasks", futureCompletions.size());
+        } else {
+            logger.info("[deleteTask] Nenhuma completedTask a excluir");
+        }
+
+        dayService.deleteTaskFromDayAndFutureDays(user.getId(), dayId, tarefa);
+        logger.info("[deleteTask] Concluído: deleteTaskFromDayAndFutureDays");
+
+        boolean stillReferenced = dayRepository.existsByUserIdAndTarefasPrevistasContaining(user.getId(), tarefa);
+        boolean hasRemainingCompletions = completedTaskRepository.existsByTarefa_Id(tarefa.getId());
+
+        logger.info("[deleteTask] stillReferenced: {}", stillReferenced);
+        logger.info("[deleteTask] hasRemainingCompletions: {}", hasRemainingCompletions);
+
+        if (!stillReferenced && !hasRemainingCompletions) {
+            tarefaRepository.delete(tarefa);
+            logger.info("[deleteTask] Tarefa {} deletada completamente do banco", tarefa.getId());
+        } else {
+            logger.info("[deleteTask] Tarefa {} ainda referenciada em algum lugar, não foi deletada", tarefaId);
+        }
+
+        return true;
     }
 
     @Transactional
