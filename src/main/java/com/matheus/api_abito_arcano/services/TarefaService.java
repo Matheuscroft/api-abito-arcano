@@ -154,8 +154,10 @@ public class TarefaService {
         Optional<Tarefa> tarefaOptional = tarefaRepository.findByIdAndUserId(tarefaId, user.getId());
 
         if (tarefaOptional.isEmpty()) {
-            logger.warn("[deleteTask] Tarefa {} não encontrada para o usuário {}", tarefaId, user.getId());
-            return false;
+            logger.warn("[deleteTask] Tarefa {} não encontrada para o usuário {}. Tentando deletar apenas completedTasks", tarefaId, user.getId());
+
+            completedTaskService.deleteCompletedTasksFromDate(tarefaId, dayRepository.findDateById(dayId));
+            return true;
         }
 
         Tarefa tarefa = tarefaOptional.get();

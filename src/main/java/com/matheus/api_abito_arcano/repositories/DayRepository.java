@@ -60,6 +60,6 @@ public interface DayRepository extends JpaRepository<Day, UUID> {
             @Param("data") LocalDate data
     );
 
-
+    LocalDate findDateById(UUID dayId);
 
 }
