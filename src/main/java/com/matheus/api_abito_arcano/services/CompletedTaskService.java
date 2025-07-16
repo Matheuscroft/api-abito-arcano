@@ -4,6 +4,7 @@ import com.matheus.api_abito_arcano.dtos.response.CheckTarefaResponseDTO;
 import com.matheus.api_abito_arcano.dtos.response.CompletedTaskResponseDTO;
 import com.matheus.api_abito_arcano.dtos.response.CompletedTaskWithScoreDTO;
 import com.matheus.api_abito_arcano.dtos.response.UncheckTarefaResponseDTO;
+import com.matheus.api_abito_arcano.exceptions.TarefaNotFoundException;
 import com.matheus.api_abito_arcano.models.CompletedTask;
 import com.matheus.api_abito_arcano.models.Day;
 import com.matheus.api_abito_arcano.models.Tarefa;
@@ -44,7 +45,9 @@ public class CompletedTaskService {
         User user = userService.getUsuarioAutenticado();
         logger.info("[checkTarefa] Usuário autenticado: {}", user.getId());
 
-        Tarefa tarefa = tarefaRepository.findById(tarefaId).orElseThrow();
+        Tarefa tarefa = tarefaRepository.findById(tarefaId)
+                .orElseThrow(() -> new TarefaNotFoundException(tarefaId));
+
         Day day = dayRepository.findById(dayId).orElseThrow();
 
         logger.info("[checkTarefa] Tarefa: {}, Dia: {}", tarefa.getTitle(), day.getDate());
@@ -93,6 +96,7 @@ public class CompletedTaskService {
         return new UncheckTarefaResponseDTO(dto, score);
     }
 
+    @Transactional
     public void deleteCompletedTasksFromDate(UUID tarefaId, LocalDate fromDate) {
 
         List<CompletedTask> completions = completedTaskRepository

@@ -185,6 +185,7 @@ public class DayService {
     }
 
 
+
     public void deleteTaskFromDaysAndFromDate(UUID userId, LocalDate fromDate, Tarefa tarefa) {
 
         List<Day> diasComTarefa = dayRepository.findAllByUserIdAndTarefaWithTarefasFromDate(userId, tarefa, fromDate);

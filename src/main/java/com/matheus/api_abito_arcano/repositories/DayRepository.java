@@ -62,6 +62,4 @@ public interface DayRepository extends JpaRepository<Day, UUID> {
 
 
 
-
-
 }
