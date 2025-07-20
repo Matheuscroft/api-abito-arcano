@@ -152,7 +152,25 @@ public class DayService {
 
         for (Day day : futureDays) {
             int dayOfWeek = day.getDate().getDayOfWeek().getValue() % 7 + 1;
+
             if (tarefa.getDaysOfTheWeek().contains(dayOfWeek)) {
+
+                // ⚠️ Evita duplicar a tarefa no mesmo dia
+                boolean jaContemTarefa = day.getTarefasPrevistas().stream()
+                        .anyMatch(t -> t.getId().equals(tarefa.getId()));
+
+                if (jaContemTarefa) continue;
+
+                // ⚠️ Se a tarefa sendo adicionada é um clone, não adiciona no dia que já tiver completed da original
+                if (tarefa.getOriginalTask() != null) {
+                    UUID originalId = tarefa.getOriginalTask().getId();
+
+                    boolean diaTemCompletedDaOriginal = day.getCompletedTasks().stream()
+                            .anyMatch(ct -> ct.getTarefa().getId().equals(originalId));
+
+                    if (diaTemCompletedDaOriginal) continue;
+                }
+
                 day.getTarefasPrevistas().add(tarefa);
             }
         }
@@ -160,28 +178,54 @@ public class DayService {
         dayRepository.saveAll(futureDays);
     }
 
+
+    @Transactional
     public void updateTaskFromDateAndFutureDays(Tarefa tarefa, List<Integer> diasAntigos, LocalDate fromDate) {
         UUID userId = tarefa.getUser().getId();
-
-        List<Day> diasFuturos = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(userId, fromDate);
         UUID tarefaId = tarefa.getId();
 
+        logger.info("[updateTaskFromDateAndFutureDays] Iniciando atualização da tarefa {} a partir da data {} para o usuário {}", tarefaId, fromDate, userId);
+
+        List<Day> diasFuturos = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(userId, fromDate);
+        logger.info("[updateTaskFromDateAndFutureDays] {} dias futuros encontrados para análise", diasFuturos.size());
+
+
         for (Day dia : diasFuturos) {
-            int diaDaSemana = dia.getDate().getDayOfWeek().getValue() % 7 + 1;
+
+            LocalDate data = dia.getDate();
+            int diaDaSemana = data.getDayOfWeek().getValue() % 7 + 1;
+
+            logger.info(" - Analisando dia {} (dia da semana: {})", data, diaDaSemana);
+
+            boolean hasCompletedTask = dia.getCompletedTasks().stream()
+                    .anyMatch(ct -> ct.getTarefa().getId().equals(tarefaId));
+
+            if (hasCompletedTask) {
+                logger.info("   • Dia {} contém CompletedTask para a tarefa {}. Ignorando alterações neste dia.", data, tarefaId);
+                continue;
+            }
 
             boolean estavaAntes = diasAntigos.contains(diaDaSemana);
             boolean estaAgora = tarefa.getDaysOfTheWeek().contains(diaDaSemana);
 
-            if (estavaAntes && !estaAgora) {
+            if(estavaAntes && !estaAgora) {
+                logger.info("   • A tarefa {} estava prevista nesse dia, mas não está mais. Removendo do dia {}", tarefaId, data);
                 dia.getTarefasPrevistas().removeIf(t -> t.getId().equals(tarefaId));
             } else if (!estavaAntes && estaAgora) {
-                if (dia.getTarefasPrevistas().stream().noneMatch(t -> t.getId().equals(tarefaId))) {
+                boolean jaPresente = dia.getTarefasPrevistas().stream().anyMatch(t -> t.getId().equals(tarefaId));
+                if (!jaPresente) {
+                    logger.info("   • A tarefa {} não estava nesse dia, mas agora está. Adicionando ao dia {}", tarefaId, data);
                     dia.getTarefasPrevistas().add(tarefa);
+                } else {
+                    logger.info("   • A tarefa {} já estava corretamente prevista no dia {}. Nada será feito.", tarefaId, data);
                 }
+            } else {
+                logger.info("   • Sem mudanças necessárias para a tarefa {} no dia {}", tarefaId, data);
             }
         }
 
         dayRepository.saveAll(diasFuturos);
+        logger.info("[updateTaskFromDateAndFutureDays] Atualização concluída.");
     }
 
 
@@ -215,25 +259,42 @@ public class DayService {
 
 
     public List<Tarefa> removerVersoesFuturasDosDias(Tarefa originalTask, LocalDate cutoffDate, UUID userId) {
+        logger.info("[removerVersoesFuturasDosDias] Iniciando remoção das versões futuras a partir de {}", cutoffDate);
+
         List<Tarefa> todasVersoes = new ArrayList<>();
         todasVersoes.add(originalTask);
-
         List<Tarefa> outras = tarefaRepository.findAllByOriginalTask(originalTask);
         todasVersoes.addAll(outras);
 
+        logger.info("[removerVersoesFuturasDosDias] Total de versões encontradas: {}", todasVersoes.size());
+
         List<Day> diasFuturos = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(userId, cutoffDate);
+        logger.info("[removerVersoesFuturasDosDias] Dias futuros analisados: {}", diasFuturos.size());
 
         Set<UUID> idsRemovidos = new HashSet<>();
 
         for (Day dia : diasFuturos) {
+            logger.debug("[removerVersoesFuturasDosDias] Analisando dia {}", dia.getDate());
+
             boolean mudou = dia.getTarefasPrevistas().removeIf(t -> {
                 boolean corresponde = todasVersoes.stream().anyMatch(v -> v.getId().equals(t.getId()));
-                if (corresponde) idsRemovidos.add(t.getId());
-                return corresponde;
+
+                // 🚫 NÃO remover se essa tarefa foi completada neste dia
+                boolean foiCompletada = dia.getCompletedTasks().stream()
+                        .anyMatch(ct -> ct.getTarefa().getId().equals(t.getId()));
+
+                if (corresponde && !foiCompletada) {
+                    logger.info("[removerVersoesFuturasDosDias] Removendo tarefa {} do dia {}", t.getId(), dia.getDate());
+                    idsRemovidos.add(t.getId());
+                    return true;
+                }
+
+                return false;
             });
 
             if (mudou) {
                 dayRepository.save(dia);
+                logger.debug("[removerVersoesFuturasDosDias] Dia {} atualizado", dia.getDate());
             }
         }
 
@@ -243,6 +304,8 @@ public class DayService {
     }
 
     public void excluirVersoesSeNaoUsadasAntes(List<Tarefa> versoesRemovidas, LocalDate cutoffDate, UUID userId) {
+        logger.info("[excluirVersoesSeNaoUsadasAntes] Verificando uso anterior a {}", cutoffDate);
+
         List<Day> diasPassados = dayRepository.findAllByUserIdAndDateLessThanWithTarefas(userId, cutoffDate);
         Set<UUID> usadasAntes = diasPassados.stream()
                 .flatMap(d -> d.getTarefasPrevistas().stream())
@@ -253,18 +316,45 @@ public class DayService {
                 .filter(t -> !usadasAntes.contains(t.getId()))
                 .collect(Collectors.toList());
 
+        logger.info("[excluirVersoesSeNaoUsadasAntes] Tarefas a deletar: {}", deletar.size());
+        deletar.forEach(t -> logger.debug("[excluirVersoesSeNaoUsadasAntes] Deletando tarefa {}", t.getId()));
+
         tarefaRepository.deleteAll(deletar);
     }
 
     public boolean seraExcluidaSeNaoUsadaAntes(Tarefa task, LocalDate cutoffDate, UUID userId) {
+        logger.info("[seraExcluidaSeNaoUsadaAntes] Verificando se tarefa {} será excluída antes de {}", task.getId(), cutoffDate);
+
         List<Day> diasPassados = dayRepository.findAllByUserIdAndDateLessThanWithTarefas(userId, cutoffDate);
         Set<UUID> usadasAntes = diasPassados.stream()
                 .flatMap(d -> d.getTarefasPrevistas().stream())
                 .map(Tarefa::getId)
                 .collect(Collectors.toSet());
 
-        return !usadasAntes.contains(task.getId());
+        boolean seraExcluida = !usadasAntes.contains(task.getId());
+        logger.info("[seraExcluidaSeNaoUsadaAntes] Resultado: {}", seraExcluida);
+
+        return seraExcluida;
     }
+
+    public boolean tarefaFoiConcluidaEmDiasFuturos(Tarefa tarefa, LocalDate fromDate, UUID userId) {
+        logger.info("[tarefaFoiConcluidaEmDiasFuturos] Checando se tarefa {} foi completada após {}", tarefa.getId(), fromDate);
+
+        List<Day> diasFuturos = dayRepository.findAllByUserIdAndDateGreaterThanEqualWithTarefas(userId, fromDate);
+
+        boolean foiConcluida = diasFuturos.stream()
+                .flatMap(d -> d.getCompletedTasks().stream())
+                .anyMatch(ct -> ct.getTarefa().getId().equals(tarefa.getId()));
+
+        if (foiConcluida) {
+            logger.info("[tarefaFoiConcluidaEmDiasFuturos] A tarefa {} foi completada em dias futuros a partir de {}", tarefa.getId(), fromDate);
+        } else {
+            logger.info("[tarefaFoiConcluidaEmDiasFuturos] Nenhum completed encontrado da tarefa {} a partir de {}", tarefa.getId(), fromDate);
+        }
+
+        return foiConcluida;
+    }
+
 
 
 }

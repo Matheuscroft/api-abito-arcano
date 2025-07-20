@@ -96,54 +96,65 @@ public class TarefaService {
         return new TarefaResponseDTO(tarefa);
     }
 
-
+    @Transactional
     public Tarefa updateTask(UUID id, TarefaDTO tarefaDTO, UUID dayId) {
+        logger.info("[updateTask] Iniciando atualização da tarefa com id: {}", id);
 
         User user = userService.getUsuarioAutenticado();
+        logger.info("[updateTask] Usuário autenticado: {}", user.getId());
 
         Optional<Tarefa> tarefaOptional = tarefaRepository.findByIdAndUserId(id, user.getId());
-        if (tarefaOptional.isPresent()) {
-            Tarefa oldTask = tarefaOptional.get();
-
-            Tarefa tempNewTask = new Tarefa();
-            BeanUtils.copyProperties(tarefaDTO, tempNewTask, "areaId", "subareaId");
-
-            if (tarefaDTO.areaId() == null) {
-                tempNewTask.setArea(null);
-            } else {
-                Area area = areaService.getAreaOrThrow(tarefaDTO.areaId());
-                tempNewTask.setArea(area);
-            }
-
-            if (tarefaDTO.subareaId() == null) {
-                tempNewTask.setSubarea(null);
-            } else {
-                Subarea subarea = subareaService.getSubareaOrThrow(tarefaDTO.subareaId(), tempNewTask.getArea());
-                tempNewTask.setSubarea(subarea);
-            }
-
-            if (shouldCloneTask(oldTask, tempNewTask)) {
-                return cloneTask(oldTask, tempNewTask, dayId, user);
-            }
-
-            List<Integer> oldDaysOfWeek = new ArrayList<>(oldTask.getDaysOfTheWeek());
-
-            BeanUtils.copyProperties(tarefaDTO, oldTask, "areaId", "subareaId");
-
-            oldTask.setArea(tempNewTask.getArea());
-            oldTask.setSubarea(tempNewTask.getSubarea());
-
-            oldTask = tarefaRepository.save(oldTask);
-
-            Day day = dayRepository.findByIdAndUserId(dayId, user.getId())
-                    .orElseThrow(() -> new RuntimeException("Dia com ID " + dayId + " não encontrado."));
-
-            dayService.updateTaskFromDateAndFutureDays(oldTask, oldDaysOfWeek, day.getDate());
-
-            return oldTask;
+        if (tarefaOptional.isEmpty()) {
+            logger.warn("[updateTask] Tarefa com ID {} não encontrada para o usuário {}", id, user.getId());
+            return null;
         }
-        return null;
+
+        Tarefa oldTask = tarefaOptional.get();
+        logger.info("[updateTask] Tarefa encontrada: {} - '{}'", oldTask.getId(), oldTask.getTitle());
+
+        Day day = dayRepository.findByIdAndUserId(dayId, user.getId())
+                .orElseThrow(() -> new RuntimeException("Dia com ID " + dayId + " não encontrado."));
+        logger.info("[updateTask] Dia base encontrado: {} (Data: {})", day.getId(), day.getDate());
+
+        LocalDate cutoffDate = day.getDate();
+
+        // ✅ CLONAGEM OBRIGATÓRIA CASO JÁ TENHA SIDO CONCLUÍDA EM ALGUM DIA FUTURO
+        if (dayService.tarefaFoiConcluidaEmDiasFuturos(oldTask, cutoffDate, user.getId())) {
+            logger.info("[updateTask] A tarefa {} já foi completada em dias futuros. Forçando clonagem mesmo sem alterações significativas.", oldTask.getId());
+
+            Tarefa tempNewTask = prepararTarefaTemporaria(tarefaDTO);
+            return cloneTask(oldTask, tempNewTask, cutoffDate, user, true);
+        }
+
+        // 🧪 Preparar a nova tarefa para comparação
+        Tarefa tempNewTask = prepararTarefaTemporaria(tarefaDTO);
+
+        // 🔄 Clonagem por alteração significativa
+        if (shouldCloneTask(oldTask, tempNewTask)) {
+            logger.info("[updateTask] Diferenças significativas detectadas. Clonando tarefa...");
+            return cloneTask(oldTask, tempNewTask, cutoffDate, user, false);
+        }
+
+        // 🛠️ Atualização direta da tarefa original
+        logger.info("[updateTask] Nenhuma diferença crítica. Atualizando tarefa existente.");
+
+        List<Integer> oldDaysOfWeek = new ArrayList<>(oldTask.getDaysOfTheWeek());
+        logger.info("[updateTask] Dias antigos da semana: {}", oldDaysOfWeek);
+
+        BeanUtils.copyProperties(tarefaDTO, oldTask, "areaId", "subareaId");
+        oldTask.setArea(tempNewTask.getArea());
+        oldTask.setSubarea(tempNewTask.getSubarea());
+
+        oldTask = tarefaRepository.save(oldTask);
+        logger.info("[updateTask] Tarefa atualizada com sucesso. ID: {}", oldTask.getId());
+
+        logger.info("[updateTask] Iniciando atualização dos dias futuros a partir de {}", cutoffDate);
+        dayService.updateTaskFromDateAndFutureDays(oldTask, oldDaysOfWeek, cutoffDate);
+        logger.info("[updateTask] Atualização da tarefa concluída. Retornando tarefa atualizada.");
+
+        return oldTask;
     }
+
 
 
 
@@ -269,45 +280,80 @@ public class TarefaService {
         return similarity < 0.5;
     }
 
-    private Tarefa cloneTask(Tarefa oldTask, Tarefa newTaskData, UUID dayId, User user) {
+    private Tarefa cloneTask(Tarefa oldTask, Tarefa newTaskData, LocalDate cutoffDate, User user, boolean isCloningDueToFutureCompletion) {
+        logger.info("[cloneTask] Clonando tarefa '{}' para o dia {}", oldTask.getTitle(), cutoffDate);
 
-        logger.info("Clonando tarefa '{}' para o dia {}", oldTask.getTitle(), dayId);
-
+        // 1. Marcar a versão antiga como não sendo mais a mais recente
         oldTask.setLatestVersion(false);
         tarefaRepository.save(oldTask);
 
+        // 2. Obter a raiz da árvore
         Tarefa originalTask = (oldTask.getOriginalTask() != null) ? oldTask.getOriginalTask() : oldTask;
 
-        LocalDate cutoffDate = dayRepository.findByIdAndUserId(dayId, user.getId())
-                .orElseThrow(() -> new RuntimeException("Dia com ID " + dayId + " não encontrado."))
-                .getDate();
-
+        // 4. Remover versões futuras
         List<Tarefa> versoesRemovidas = dayService.removerVersoesFuturasDosDias(originalTask, cutoffDate, user.getId());
 
-        boolean originalVaiSerExcluida = dayService.seraExcluidaSeNaoUsadaAntes(originalTask, cutoffDate, user.getId());
-        logger.info("originalVaiSerExcluida? - '{}'", originalVaiSerExcluida);
+        // 5. Checar se a original será excluída
+        boolean originalVaiSerExcluida = false;
+        if (!isCloningDueToFutureCompletion) {
+            originalVaiSerExcluida = dayService.seraExcluidaSeNaoUsadaAntes(originalTask, cutoffDate, user.getId());
+            logger.info("[cloneTask] originalVaiSerExcluida? '{}'", originalVaiSerExcluida);
+        } else {
+            logger.info("[cloneTask] Clonagem forçada por completed future — não será avaliada exclusão da original.");
+        }
 
+        // 6. Criar nova instância da tarefa
         Tarefa newTask = new Tarefa();
-        BeanUtils.copyProperties(newTaskData, newTask);
-        newTask.setId(null);
+        newTask.setTitle(newTaskData.getTitle());
+        newTask.setScore(newTaskData.getScore());
+        newTask.setDaysOfTheWeek(new ArrayList<>(newTaskData.getDaysOfTheWeek()));
+        newTask.setType(newTaskData.getType());
         newTask.setUser(user);
         newTask.setCreatedAt(LocalDateTime.now());
         newTask.setLatestVersion(true);
 
-        if (originalVaiSerExcluida) {
-            newTask.setOriginalTask(null);
-            logger.info("A tarefa original será excluída. Nova tarefa será a raiz da árvore.");
-        } else {
+        if (newTaskData.getArea() != null) {
+            newTask.setArea(areaService.getAreaOrThrow(newTaskData.getArea().getId()));
+        }
+
+        if (newTaskData.getSubarea() != null) {
+            newTask.setSubarea(subareaService.getSubareaOrThrow(newTaskData.getSubarea().getId(), newTask.getArea()));
+        }
+
+        if (!originalVaiSerExcluida) {
             newTask.setOriginalTask(originalTask);
         }
 
+        // 7. Salvar nova tarefa
         newTask = tarefaRepository.save(newTask);
 
+        // 8. Adicionar a nova tarefa aos dias futuros
         dayService.addTaskToDayAndFutureDays(newTask, user.getId(), cutoffDate);
-        dayService.excluirVersoesSeNaoUsadasAntes(versoesRemovidas, cutoffDate, user.getId());
 
+        // 9. Limpar tarefas antigas se necessário
+        if (!isCloningDueToFutureCompletion) {
+            dayService.excluirVersoesSeNaoUsadasAntes(versoesRemovidas, cutoffDate, user.getId());
+        }
 
+        logger.info("[cloneTask] Tarefa clonada com sucesso. Nova tarefa ID: {}", newTask.getId());
         return newTask;
+    }
+
+    private Tarefa prepararTarefaTemporaria(TarefaDTO tarefaDTO) {
+        Tarefa temp = new Tarefa();
+        BeanUtils.copyProperties(tarefaDTO, temp, "areaId", "subareaId");
+
+        if (tarefaDTO.areaId() != null) {
+            Area area = areaService.getAreaOrThrow(tarefaDTO.areaId());
+            temp.setArea(area);
+        }
+
+        if (tarefaDTO.subareaId() != null) {
+            Subarea sub = subareaService.getSubareaOrThrow(tarefaDTO.subareaId(), temp.getArea());
+            temp.setSubarea(sub);
+        }
+
+        return temp;
     }
 
 
