@@ -29,5 +29,8 @@ public interface ScoreRepository extends JpaRepository<Score, UUID> {
             UUID userId
     );
 
+    List<Score> findAllByUser_Id(UUID userId);
+
+
 
 }

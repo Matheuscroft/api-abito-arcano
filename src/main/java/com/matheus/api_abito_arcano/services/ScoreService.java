@@ -7,8 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ScoreService {
@@ -66,4 +68,22 @@ public class ScoreService {
         );
 
     }
+
+
+    @Transactional(readOnly = true)
+    public List<ScoreResponseDTO> listarScoresPorUsuario() {
+        User user = userService.getUsuarioAutenticado();
+        List<Score> scores = scoreRepository.findAllByUser_Id(user.getId());
+
+        return scores.stream().map(score -> new ScoreResponseDTO(
+                score.getId(),
+                score.getArea().getId(),
+                score.getArea().getName(),
+                score.getSubarea() != null ? score.getSubarea().getId() : null,
+                score.getSubarea() != null ? score.getSubarea().getName() : null,
+                score.getDay().getDate(),
+                score.getScore()
+        )).collect(Collectors.toList());
+    }
+
 }
